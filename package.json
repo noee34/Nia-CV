@@ -1,0 +1,11 @@
+{
+  "name": "nia-cv",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Nia CV — diario de biberones y deposiciones (PWA para iPhone)",
+  "type": "module",
+  "scripts": {
+    "start": "node scripts/serve.mjs",
+    "test": "TZ=UTC node --test tests/*.test.mjs && TZ=America/New_York node --test tests/*.test.mjs && TZ=Australia/Sydney node --test tests/*.test.mjs && TZ=Europe/Madrid node --test tests/*.test.mjs"
+  }
+}
