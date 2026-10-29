@@ -15,6 +15,11 @@ await mkdir(shots, { recursive: true });
 const users = new Map(); // email -> { id, password }
 const tables = { biberones: [], deposiciones: [], ajustes: [], album: [] };
 const pages = new Set();
+const members = new Map(); // miembro -> propietario (familias)
+const invites = new Map(); // código -> { owner, expires, usedBy }
+const emailOf = (id) => [...users].find(([, u]) => u.id === id)?.[0] || '';
+const familyOf = (id) => members.get(id) || id; // igual que privado.mi_familia()
+const allowed = (token, owner) => owner === token || owner === familyOf(token); // reglas "su familia"
 
 let serverDown = false; // simula que la nube no responde
 
@@ -33,8 +38,31 @@ async function rpc(token, call) {
     return { data: { session: { access_token: u.id, user: { id: u.id, email: call.email } } } };
   }
   if (!token) return { error: { message: 'JWT expired' } };
+  if (kind === 'rpc') {
+    const fail = (message) => ({ data: null, error: { message } });
+    if (call.name === 'mi_familia_info') {
+      const owner = familyOf(token);
+      return { data: { propietario: owner, propietario_correo: emailOf(owner), miembros: [...members].filter(([, o]) => o === owner).map(([m]) => ({ id: m, correo: emailOf(m) })) }, error: null };
+    }
+    if (call.name === 'crear_invitacion') {
+      if (members.has(token)) return fail('Solo la persona que creó el diario puede invitar.');
+      const code = Math.random().toString(36).slice(2, 8).toUpperCase().padEnd(6, 'X');
+      invites.set(code, { owner: token, expires: Date.now() + 48 * 3600e3, usedBy: null });
+      return { data: { codigo: code, caduca: new Date(Date.now() + 48 * 3600e3).toISOString() }, error: null };
+    }
+    if (call.name === 'unirse_a_familia') {
+      const inv = invites.get(String(call.args.p_codigo).toUpperCase());
+      if (!inv || inv.usedBy || inv.expires < Date.now()) return fail('El código no es válido o ha caducado. Pide uno nuevo.');
+      if (inv.owner === token) return fail('Ese código es tuyo: compártelo con tu pareja.');
+      members.set(token, inv.owner); inv.usedBy = token;
+      return { data: inv.owner, error: null };
+    }
+    if (call.name === 'salir_de_familia') { members.delete(token); return { data: null, error: null }; }
+    if (call.name === 'quitar_de_familia') { if (members.get(call.args.p_miembro) === token) members.delete(call.args.p_miembro); return { data: null, error: null }; }
+    return fail('función desconocida');
+  }
   const t = tables[call.table];
-  const visible = () => t.filter((r) => r.usuario_id === token && call.filters.every(([f, v]) => String(r[f]) === String(v)));
+  const visible = () => t.filter((r) => allowed(token, r.usuario_id) && call.filters.every(([f, v]) => String(r[f]) === String(v)));
   let changed = false;
   let data = null;
   if (call.action === 'select') {
@@ -43,7 +71,7 @@ async function rpc(token, call) {
     data = call.single ? (rows[0] ?? null) : rows;
   } else if (call.action === 'upsert') {
     for (const row of call.rows) {
-      if (row.usuario_id !== token) return { error: { message: 'new row violates row-level security policy' } };
+      if (!allowed(token, row.usuario_id)) return { error: { message: 'new row violates row-level security policy' } };
       const key = call.table === 'ajustes' ? 'usuario_id' : 'id';
       const i = t.findIndex((r) => r[key] === row[key]);
       if (i >= 0) t[i] = { ...row }; else t.push({ ...row });
@@ -60,9 +88,11 @@ async function rpc(token, call) {
 
 /* ---------- Cliente simulado que se inyecta en lugar de supabase-js ---------- */
 const mockClient = `
-window.supabase = { createClient() {
+window.supabase = { createClient(url, key, opts) {
   const KEY = 'mock-session';
-  const read = () => { try { return JSON.parse(localStorage.getItem(KEY)); } catch { return null; } };
+  // Igual que supabase-js: la sesión se guarda en el almacenamiento que indique la app.
+  const store = opts?.auth?.storage || localStorage;
+  const read = () => { try { return JSON.parse(store.getItem(KEY)); } catch { return null; } };
   const call = async (c) => {
     if (!navigator.onLine) return { data: null, error: { message: 'Failed to fetch' } };
     return window.__mockRpc(read()?.access_token || null, c);
@@ -70,11 +100,12 @@ window.supabase = { createClient() {
   const authListeners = [];
   const auth = {
     async getSession() { return { data: { session: read() }, error: null }; },
-    async signInWithPassword({ email, password }) { const r = await call({ kind: 'signIn', email, password }); if (r.data) localStorage.setItem(KEY, JSON.stringify(r.data.session)); return r.data ? r : { data: {}, error: r.error }; },
-    async signUp({ email, password }) { const r = await call({ kind: 'signUp', email, password }); if (r.data) localStorage.setItem(KEY, JSON.stringify(r.data.session)); return r.data ? r : { data: {}, error: r.error }; },
+    async signInWithPassword({ email, password }) { const r = await call({ kind: 'signIn', email, password }); if (r.data) store.setItem(KEY, JSON.stringify(r.data.session)); return r.data ? r : { data: {}, error: r.error }; },
+    async signUp({ email, password }) { const r = await call({ kind: 'signUp', email, password }); if (r.data) store.setItem(KEY, JSON.stringify(r.data.session)); return r.data ? r : { data: {}, error: r.error }; },
     async resetPasswordForEmail() { return { error: null }; },
     async updateUser() { return { data: {}, error: null }; },
-    async signOut() { localStorage.removeItem(KEY); return { error: null }; },
+    async signOut() { store.removeItem(KEY); return { error: null }; },
+    async setSession(sess) { store.setItem(KEY, JSON.stringify(sess)); return { data: { session: sess }, error: null }; },
     onAuthStateChange(cb) { authListeners.push(cb); return { data: { subscription: { unsubscribe() {} } } }; },
   };
   const from = (table) => {
@@ -93,7 +124,8 @@ window.supabase = { createClient() {
   window.__mockChannels = [];
   window.__mockNotify = () => window.__mockChannels.forEach((fn) => fn({}));
   const channel = () => { const ch = { on(_t, _f, cb) { window.__mockChannels.push(cb); return ch; }, subscribe() { return ch; } }; return ch; };
-  return { auth, from, channel, removeChannel() {} };
+  const rpc = (name, args) => call({ kind: 'rpc', name, args });
+  return { auth, from, channel, rpc, removeChannel() {} };
 } };`;
 
 const browser = await chromium.launch();
@@ -239,6 +271,104 @@ await pb.waitForFunction(async () => (await import('/js/store.js')).store.all('a
 await pa.getByRole('tab', { name: 'Hoy' }).tap();
 await pb.getByRole('tab', { name: 'Hoy' }).tap();
 step('El álbum se guarda en la nube y llega al otro dispositivo');
+
+// ---------- Familia: la pareja entra con SU cuenta al mismo diario ----------
+await pa.getByRole('button', { name: 'Ajustes' }).tap();
+await pa.locator('[data-invite]').tap();
+await pa.locator('.invite-code').waitFor();
+const code = (await pa.locator('.invite-code').innerText()).trim();
+assert.match(code, /^[A-Z0-9]{6}$/);
+await pa.screenshot({ path: `${shots}/cuenta-06-invitar.png` });
+await pa.getByRole('button', { name: 'Cerrar' }).last().tap();
+await pa.getByRole('button', { name: 'Cerrar' }).first().tap();
+await pa.locator('.sheet-root').first().waitFor({ state: 'detached' });
+step(`La propietaria crea un código de invitación (${code})`);
+
+const C = await newDevice('móvil de la pareja');
+const pc = C.page;
+await pc.goto(URL);
+await pc.locator('#auth form').waitFor();
+await pc.getByRole('button', { name: '¿Te han invitado? Crea tu cuenta con el código' }).tap();
+await pc.fill('#auth-email', 'pareja@example.com');
+await pc.fill('#auth-password', 'NuestraNia2026');
+await pc.fill('#auth-repeat', 'NuestraNia2026');
+await pc.fill('#auth-invite', code.toLowerCase());
+assert.equal(await pc.locator('input[name="remember"]').isChecked(), true, '“Mantener la sesión” viene marcado');
+await pc.screenshot({ path: `${shots}/cuenta-07-pareja.png` });
+await pc.getByRole('button', { name: 'Crear cuenta' }).tap();
+await waitText(pc, '.h-display', /Nia Carmen, hoy/);
+await waitText(pc, '#view-hoy .card', /1\s*toma/);
+step('La pareja crea su propia cuenta con el código y ve el mismo diario');
+
+await pc.getByRole('button', { name: 'Registrar caca' }).tap();
+await pc.locator('[data-cons="blanda"]').tap();
+await pc.getByRole('button', { name: 'Guardar deposición' }).tap();
+await waitText(pa, '#view-hoy', /2\s*deposiciones hoy/);
+const lastPoop = tables.deposiciones.at(-1);
+assert.equal(lastPoop.usuario_id, 'u-1', 'lo apuntado por la pareja va al diario de la propietaria');
+step('Lo que apunta la pareja llega en vivo al móvil de la propietaria');
+
+await pa.getByRole('button', { name: 'Ajustes' }).tap();
+await waitText(pa, '.sheet', /pareja@example\.com/);
+await pa.getByRole('button', { name: 'Cerrar' }).first().tap();
+await pa.locator('.sheet-root').waitFor({ state: 'detached' });
+await pc.getByRole('button', { name: 'Ajustes' }).tap();
+await waitText(pc, '.sheet', /Compartes el diario de[\s\S]*familia@example\.com/);
+assert.equal(await pc.locator('[data-invite]').count(), 0, 'la pareja no puede invitar a otros');
+await pc.screenshot({ path: `${shots}/cuenta-08-familia.png` });
+await pc.getByRole('button', { name: 'Cerrar' }).first().tap();
+await pc.locator('.sheet-root').waitFor({ state: 'detached' });
+step('Ajustes muestra quién comparte el diario en cada cuenta');
+
+// Un código ya usado no sirve
+const D = await newDevice('otro móvil');
+const pd = D.page;
+await pd.goto(URL);
+await pd.locator('#auth form').waitFor();
+await pd.getByRole('button', { name: 'Crear una cuenta nueva' }).tap();
+await pd.fill('#auth-email', 'curioso@example.com');
+await pd.fill('#auth-password', 'Curioso2026!');
+await pd.fill('#auth-repeat', 'Curioso2026!');
+await pd.fill('#auth-invite', code);
+await pd.getByRole('button', { name: 'Crear cuenta' }).tap();
+await pd.locator('.toast').filter({ hasText: /no es válido o ha caducado/ }).waitFor();
+await waitText(pd, '#view-hoy .card', /0\s*tomas/);
+step('Un código ya usado no da acceso (esa cuenta ve solo su diario vacío)');
+
+// Mantener la sesión iniciada: con la casilla, al cerrar y abrir la app sigue dentro
+const pc2 = await C.ctx.newPage();
+pages.add(pc2);
+await pc2.goto(URL);
+await waitText(pc2, '.h-display', /Nia Carmen, hoy/);
+await pc2.close(); pages.delete(pc2);
+step('Con “Mantener la sesión iniciada”, al volver a abrir la app sigue dentro');
+
+// Sin la casilla: al cerrar y abrir la app pide entrar otra vez
+await pd.getByRole('button', { name: 'Ajustes' }).tap();
+await pd.getByRole('button', { name: 'Cerrar sesión' }).tap();
+await pd.locator('#auth form').waitFor();
+await pd.fill('#auth-email', 'curioso@example.com');
+await pd.fill('#auth-password', 'Curioso2026!');
+await pd.locator('input[name="remember"]').uncheck();
+await pd.getByRole('button', { name: 'Entrar' }).tap();
+await waitText(pd, '#view-hoy .card', /0\s*tomas/);
+const pd2 = await D.ctx.newPage(); // abrir la app de nuevo (sesión temporal borrada)
+pages.add(pd2);
+await pd2.goto(URL);
+await pd2.locator('#auth form').waitFor();
+await pd2.close(); pages.delete(pd2);
+step('Sin la casilla, al volver a abrir la app pide entrar de nuevo');
+
+// La propietaria quita el acceso
+await pa.getByRole('button', { name: 'Ajustes' }).tap();
+await pa.locator('[data-remove-member]').tap();
+await pa.locator('.dialog').getByRole('button', { name: 'Quitar acceso' }).tap();
+await pa.locator('.toast').filter({ hasText: 'Acceso quitado' }).waitFor();
+await pa.getByRole('button', { name: 'Cerrar' }).first().tap();
+await pa.locator('.sheet-root').waitFor({ state: 'detached' });
+await pc.reload();
+await waitText(pc, '#view-hoy .card', /0\s*tomas/);
+step('Al quitarle el acceso, la pareja deja de ver el diario');
 
 // Cerrar sesión
 await pb.getByRole('button', { name: 'Ajustes' }).tap();

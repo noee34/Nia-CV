@@ -2,6 +2,7 @@
 import { logo, icons, paw, smallStar } from './art.js';
 import { familyScene } from './characters.js';
 import { esc, $ } from './ui.js';
+import { getRemember, setRemember, setPendingInvite } from './account.js';
 
 const MIN_PASSWORD = 8;
 
@@ -31,7 +32,7 @@ export function showAuth(root, client, { mode = 'login', onSession, notice = '' 
 
   const titles = {
     login: ['Hola', 'Entra para ver el diario de Nia desde cualquier dispositivo.'],
-    signup: ['Crear cuenta', 'Una sola cuenta para toda la familia: comparte el correo y la contraseña con quien cuide de Nia.'],
+    signup: ['Crear cuenta', 'Cada persona tiene su propia cuenta. Si tu pareja te ha dado un código de invitación, escríbelo abajo para compartir su diario.'],
     reset: ['Recuperar contraseña', 'Te enviaremos un enlace al correo para elegir una nueva.'],
     recovery: ['Nueva contraseña', 'Escribe la contraseña que quieres usar a partir de ahora.'],
   };
@@ -56,15 +57,21 @@ export function showAuth(root, client, { mode = 'login', onSession, notice = '' 
       ${needRepeat ? `<label class="auth-field"><span class="eyebrow">Repite la contraseña</span>
         <input class="auth-input" type="password" name="repeat" id="auth-repeat" autocomplete="new-password" required></label>
         <p class="field-hint">Mínimo ${MIN_PASSWORD} caracteres.</p>` : ''}
+      ${mode === 'signup' ? `<label class="auth-field"><span class="eyebrow">Código de invitación · opcional</span>
+        <input class="auth-input invite-input" name="invite" id="auth-invite" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="6" placeholder="Ej. K7PM3Q"></label>
+        <p class="field-hint">Te lo da tu pareja desde Ajustes → Familia → Invitar a mi pareja.</p>` : ''}
+      ${mode === 'login' || mode === 'signup' ? `<label class="remember"><input type="checkbox" name="remember" ${getRemember() ? 'checked' : ''}>
+        <span><strong>Mantener la sesión iniciada</strong><br><span class="subtle">No tendrás que volver a escribir tus datos en este dispositivo.</span></span></label>` : ''}
       <p class="form-error" role="alert">${esc(notice)}</p>
       <button type="submit" class="btn btn-primary btn-block">${submitLabel}</button>
     </form>
     <div class="auth-links">
       ${mode === 'login' ? `<button class="link-btn" data-mode="reset">¿Has olvidado la contraseña?</button>
-        <button class="link-btn" data-mode="signup">Crear una cuenta nueva</button>` : ''}
+        <button class="link-btn" data-mode="signup">Crear una cuenta nueva</button>
+        <button class="link-btn" data-mode="signup">¿Te han invitado? Crea tu cuenta con el código</button>` : ''}
       ${mode === 'signup' || mode === 'reset' ? '<button class="link-btn" data-mode="login">Ya tengo cuenta · Entrar</button>' : ''}
     </div>
-    <p class="subtle auth-foot">${icons.shield({ size: 16 })} Tus registros solo los ve tu cuenta.</p>
+    <p class="subtle auth-foot">${icons.shield({ size: 16 })} El diario solo lo ven tu cuenta y las personas que invites.</p>
     <div class="deco-row" aria-hidden="true">${paw(12)}${smallStar(8)}${paw(12)}</div>
   </div>`;
 
@@ -95,6 +102,9 @@ export function showAuth(root, client, { mode = 'login', onSession, notice = '' 
     if (needPass && mode !== 'login' && password.length < MIN_PASSWORD) { err.textContent = `La contraseña debe tener al menos ${MIN_PASSWORD} caracteres.`; return; }
     if (mode === 'login' && !password) { err.textContent = 'Escribe tu contraseña.'; return; }
     if (needRepeat && password !== form.repeat.value) { err.textContent = 'Las contraseñas no coinciden.'; return; }
+    const invite = (form.invite?.value || '').trim().toUpperCase();
+    if (invite && !/^[A-Z0-9]{6}$/.test(invite)) { err.textContent = 'El código de invitación tiene 6 letras o números.'; return; }
+    if (form.remember) setRemember(form.remember.checked);
 
     btn.disabled = true;
     const label = btn.textContent;
@@ -106,10 +116,11 @@ export function showAuth(root, client, { mode = 'login', onSession, notice = '' 
         return finish(data.session);
       }
       if (mode === 'signup') {
+        setPendingInvite(invite); // se aplica al entrar (ahora o tras confirmar el correo)
         const { data, error } = await client.auth.signUp({ email, password, options: { emailRedirectTo: appUrl() } });
         if (error) throw error;
         if (data.session) return finish(data.session);
-        return go('login', 'Cuenta creada. Te hemos enviado un correo: abre el enlace para confirmarla y después entra aquí.');
+        return go('login', `Cuenta creada. Te hemos enviado un correo: abre el enlace para confirmarla y después entra aquí${invite ? '. Al entrar se aplicará tu código de invitación' : ''}.`);
       }
       if (mode === 'reset') {
         const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: appUrl() });

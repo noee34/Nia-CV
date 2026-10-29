@@ -4,7 +4,7 @@ import { SyncedAdapter } from './sync.js';
 import { SupabaseRemote } from './remote-supabase.js';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 import { showAuth } from './auth.js';
-import { account, LAST_USER } from './account.js';
+import { account, LAST_USER, sessionStorageAdapter, getRemember, familyInfo, joinFamily, getPendingInvite, setPendingInvite, localDbName } from './account.js';
 import { mergeRecords } from './data-io.js';
 import { icons } from './art.js';
 import { applyTheme } from './theme.js';
@@ -238,7 +238,8 @@ function registerSW() {
 
 async function bootSupabase() {
   const client = globalThis.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+    // La sesión se guarda donde diga "Mantener la sesión iniciada" (ver account.js).
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: sessionStorageAdapter },
   });
   account.client = client;
   const authRoot = $('#auth');
@@ -258,22 +259,43 @@ async function bootSupabase() {
   // Sin red pero con una sesión anterior en este dispositivo: abrir los datos
   // guardados en local; se subirán en cuanto vuelva la conexión.
   const last = readLastUser();
-  if (last && navigator.onLine === false) return enter({ user: last }, { offline: true });
+  if (last && getRemember() && navigator.onLine === false) return enter({ user: last }, { offline: true });
   showAuth(authRoot, client, { mode: 'login', onSession: enter });
 }
 
 async function enter(session, { offline = false } = {}) {
+  const last = readLastUser();
   const user = { id: session.user.id, email: session.user.email };
-  try { localStorage.setItem(LAST_USER, JSON.stringify(user)); } catch { /* sin almacenamiento */ }
   account.user = user;
-  const adapter = new SyncedAdapter(new IDBAdapter(`nia-cv-${user.id}`), new SupabaseRemote(account.client, user.id));
+
+  // ¿A qué diario pertenece esta cuenta? (el suyo o el de su familia)
+  let familyId = last?.id === user.id ? last.familyId : null;
+  if (!offline) {
+    const code = getPendingInvite();
+    if (code) {
+      try { await joinFamily(code); toast('Te has unido al diario de tu familia'); }
+      catch (e) { toast(e.message); }
+      setPendingInvite('');
+    }
+    try {
+      account.family = await familyInfo();
+      familyId = account.family?.propietario || user.id;
+    } catch (e) {
+      console.warn('Familia', e); // sin la función en la nube o sin red: se usa lo último conocido
+    }
+  }
+  familyId = familyId || user.id;
+  if (!account.family) account.family = { propietario: familyId, propietario_correo: familyId === user.id ? user.email : '', miembros: [] };
+
+  try { if (getRemember()) localStorage.setItem(LAST_USER, JSON.stringify({ ...user, familyId })); } catch { /* sin almacenamiento */ }
+  const adapter = new SyncedAdapter(new IDBAdapter(localDbName(user.id, familyId)), new SupabaseRemote(account.client, familyId));
   try {
     await store.init({ adapter, backend: 'supabase', account: user.email });
   } catch (e) { return fail(e); }
   start();
   registerSW();
   if (offline) toast('Sin conexión: lo que registres se subirá a la nube al volver la red.');
-  offerLocalImport();
+  if (familyId === user.id) offerLocalImport();
 }
 
 function readLastUser() {

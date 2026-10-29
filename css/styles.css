@@ -623,3 +623,15 @@ textarea.notes:focus { border-color: var(--blue-deep); }
 /* Toques rápidos en el iPhone: sin zoom por doble toque ni retraso en los botones */
 button, .chip, .quick button, .cons-opt, .step, label.btn { touch-action: manipulation; }
 .grabber { padding: 8px 0; margin-top: -8px; background-clip: content-box; box-sizing: content-box; }
+
+/* ---------- Acceso: mantener la sesión y código de invitación ---------- */
+.remember { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: var(--r-ctl); background: var(--surface); border: 1px solid var(--line); cursor: pointer; }
+.remember input { width: 22px; height: 22px; margin: 2px 0 0; accent-color: var(--blue-deep); flex: none; }
+.remember .subtle { font-size: .8rem; }
+.invite-input { text-transform: uppercase; letter-spacing: .3em; font-weight: 600; font-variant-numeric: tabular-nums; }
+.invite-code { font-family: var(--sans); font-size: 2.2rem; font-weight: 600; letter-spacing: .28em; text-align: center; padding: 18px 10px 14px; margin: 8px 0 4px; border-radius: 20px; background: var(--blue-wash); color: var(--ink); user-select: all; -webkit-user-select: all; }
+.member-row .grow { overflow-wrap: anywhere; }
+.switch { appearance: none; -webkit-appearance: none; width: 50px; height: 30px; border-radius: 999px; background: var(--line-strong); position: relative; flex: none; transition: background .2s; cursor: pointer; }
+.switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform .2s; }
+.switch:checked { background: var(--sage); }
+.switch:checked::after { transform: translateX(20px); }

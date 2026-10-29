@@ -4,12 +4,12 @@ import { icons, logo, paw } from '../art.js';
 import { openSheet, confirmDialog, toast, esc, $ } from '../ui.js';
 import { toCSV, toBackup, parseBackup, mergeRecords } from '../data-io.js';
 import { dayKey } from '../dates.js';
-import { signOut } from '../account.js';
+import { signOut, account, isOwner, familyInfo, createInvite, joinFamily, leaveFamily, removeMember, restartApp, getRemember, setRemember } from '../account.js';
 import { syncLabel } from './common.js';
 import { THEMES, getTheme, setTheme } from '../theme.js';
 import { pupIcon } from '../characters.js';
 
-export const APP_VERSION = '1.5.1';
+export const APP_VERSION = '1.6.0';
 
 const INTERVALS = [[0, 'Sin referencia'], [120, 'Cada 2 h'], [150, 'Cada 2 h 30'], [180, 'Cada 3 h'], [210, 'Cada 3 h 30'], [240, 'Cada 4 h']];
 
@@ -35,6 +35,91 @@ async function deliverFile(name, content, type) {
   return true;
 }
 
+/** Quién comparte el diario y qué puede hacer cada uno. */
+function familyRows() {
+  const f = account.family || { miembros: [] };
+  const me = account.user?.email || '';
+  if (isOwner()) {
+    const members = (f.miembros || []).map((m) => `<div class="settings-row member-row"><span class="ico">${icons.heart({ size: 18 })}</span>
+        <span class="grow">${esc(m.correo || 'Cuenta invitada')}<br><span class="subtle">Comparte tu diario</span></span>
+        <button type="button" class="btn btn-danger btn-sm" data-remove-member="${esc(m.id)}" data-email="${esc(m.correo || '')}">Quitar</button></div>`).join('');
+    return `<div class="settings-row member-row"><span class="ico">${icons.star({ size: 18 })}</span><span class="grow">${esc(me)}<br><span class="subtle">Tú · creaste este diario</span></span></div>
+      ${members}
+      <button class="settings-row" data-invite><span class="ico">${icons.plus({ size: 18 })}</span><span class="grow"><strong>Invitar a mi pareja</strong><br><span class="subtle">Tendrá su propia cuenta y verá este mismo diario</span></span>${icons.right({ size: 16 })}</button>
+      <button class="settings-row" data-join><span class="ico">${icons.upload({ size: 18 })}</span><span class="grow">Tengo un código de invitación<br><span class="subtle">Para ver el diario de otra persona</span></span>${icons.right({ size: 16 })}</button>`;
+  }
+  return `<div class="settings-row member-row"><span class="ico">${icons.heart({ size: 18 })}</span><span class="grow">Compartes el diario de<br><strong>${esc(f.propietario_correo || 'tu familia')}</strong></span></div>
+    <div class="settings-row member-row"><span class="ico">${icons.star({ size: 18 })}</span><span class="grow">${esc(me)}<br><span class="subtle">Tú · cuenta invitada</span></span></div>
+    <button class="settings-row danger" data-leave><span class="ico">${icons.close({ size: 18 })}</span><span class="grow">Dejar de compartir este diario</span></button>`;
+}
+
+/** Ventana con el código de invitación, para compartirlo o copiarlo. */
+async function showInvite() {
+  let inv;
+  try { inv = await createInvite(); } catch (e) { return toast(e.message); }
+  const code = inv.codigo;
+  const until = new Date(inv.caduca).toLocaleString('es-ES', { weekday: 'long', hour: '2-digit', minute: '2-digit' });
+  const url = location.origin + location.pathname;
+  const text = `Te invito al diario de ${store.settings.babyName || 'Nia'} en Nia CV.\n1. Abre ${url} en Safari.\n2. Pulsa "Crear una cuenta nueva".\n3. Escribe tu correo, una contraseña y este código de invitación: ${code}\n(El código caduca en 48 horas.)`;
+  openSheet({
+    label: 'Invitar a mi pareja',
+    render(body) {
+      body.innerHTML = `<div class="sheet-head"><h2 class="h-section">Invitar a mi pareja</h2>
+          <button type="button" class="icon-btn" data-close aria-label="Cerrar">${icons.close()}</button></div>
+        <p class="subtle">Tu pareja tendrá su propia cuenta (su correo y su contraseña) y verá y apuntará en este mismo diario.</p>
+        <div class="invite-code" aria-label="Código ${code.split('').join(' ')}">${code}</div>
+        <p class="subtle" style="text-align:center;margin:0 0 16px">Válido hasta el ${esc(until)} · un solo uso</p>
+        <div class="card prose" style="padding:16px 18px">
+          <p><strong>Qué tiene que hacer tu pareja:</strong></p>
+          <p>1. Abrir <strong>${esc(url.replace(/^https?:\/\//, ''))}</strong> en Safari.</p>
+          <p>2. Pulsar <strong>Crear una cuenta nueva</strong>.</p>
+          <p>3. Escribir su correo, una contraseña y este código en <strong>Código de invitación</strong>.</p>
+          <p>Si ya tenía cuenta: <strong>Ajustes → Familia → Tengo un código de invitación</strong>.</p>
+        </div>
+        <div class="form-actions" style="margin-top:16px">
+          <button type="button" class="btn btn-primary btn-block" data-share-invite>${icons.upload({ size: 18 })} Enviar invitación</button>
+          <button type="button" class="btn btn-ghost btn-block" data-copy-invite>Copiar código</button>
+        </div>`;
+      body.addEventListener('click', async (e) => {
+        if (e.target.closest('[data-share-invite]')) {
+          if (navigator.share) { try { await navigator.share({ title: 'Invitación a Nia CV', text }); } catch { /* cancelado */ } }
+          else { try { await navigator.clipboard.writeText(text); toast('Invitación copiada'); } catch { toast(`Código: ${code}`); } }
+        }
+        if (e.target.closest('[data-copy-invite]')) {
+          try { await navigator.clipboard.writeText(code); toast('Código copiado'); } catch { toast(`Código: ${code}`); }
+        }
+      });
+    },
+  });
+}
+
+/** Ventana para escribir un código recibido. */
+function askJoin() {
+  openSheet({
+    label: 'Unirme a un diario',
+    render(body, close) {
+      body.innerHTML = `<form novalidate><div class="sheet-head"><h2 class="h-section">Tengo un código</h2>
+          <button type="button" class="icon-btn" data-close aria-label="Cerrar">${icons.close()}</button></div>
+        <p class="subtle">Escribe el código que te ha dado tu pareja. A partir de ahora verás su diario; lo que hubieras apuntado tú en tu cuenta se queda guardado aparte.</p>
+        <label class="auth-field" style="margin-top:14px"><span class="eyebrow">Código de invitación</span>
+          <input class="auth-input invite-input" name="code" autocomplete="off" autocapitalize="characters" maxlength="6" placeholder="Ej. K7PM3Q"></label>
+        <p class="form-error" role="alert"></p>
+        <div class="form-actions"><button type="submit" class="btn btn-primary btn-block">Unirme al diario</button></div></form>`;
+      const form = $('form', body);
+      form.onsubmit = async (e) => {
+        e.preventDefault();
+        const code = form.code.value.trim().toUpperCase();
+        const err = $('.form-error', form);
+        if (!/^[A-Z0-9]{6}$/.test(code)) { err.textContent = 'El código tiene 6 letras o números.'; return; }
+        try { await joinFamily(code); } catch (ex) { err.textContent = ex.message; return; }
+        close();
+        toast('Te has unido al diario');
+        setTimeout(restartApp, 700);
+      };
+    },
+  });
+}
+
 export function openSettings() {
   let unsub;
   openSheet({
@@ -56,8 +141,14 @@ export function openSettings() {
         <div class="settings-group">
           <div class="settings-row"><span class="ico">${icons.shield({ size: 18 })}</span><span class="grow">${esc(store.account || '')}<br><span class="subtle">${esc(syncLabel(store.sync).long)}</span></span></div>
           <button class="settings-row" data-sync-now><span class="ico">${icons.upload({ size: 18 })}</span><span class="grow">Sincronizar ahora</span></button>
+          <label class="settings-row"><span class="ico">${icons.heart({ size: 18 })}</span>
+            <span class="grow">Mantener la sesión iniciada<br><span class="subtle">En este dispositivo, sin volver a escribir tus datos</span></span>
+            <input type="checkbox" name="remember" class="switch" ${getRemember() ? 'checked' : ''}></label>
           <button class="settings-row danger" data-signout><span class="ico">${icons.close({ size: 18 })}</span><span class="grow">Cerrar sesión</span></button>
         </div>
+
+        <div class="eyebrow" style="margin-top:22px">Familia · diario compartido</div>
+        <div class="settings-group">${familyRows()}</div>
         <div style="margin-top:22px"></div>` : ''}
         <div class="eyebrow" style="margin-top:6px">Apariencia</div>
         <div class="settings-group">
@@ -118,6 +209,10 @@ export function openSettings() {
       };
       draw();
       unsub = store.subscribe(draw);
+      // Lista de la familia siempre al día (por si alguien se ha unido o ha salido)
+      if (store.backend === 'supabase') {
+        familyInfo().then((f) => { if (f) { account.family = f; draw(); } }).catch(() => { /* sin red: se queda lo último */ });
+      }
 
       body.addEventListener('change', async (e) => {
         const t = e.target;
@@ -126,6 +221,12 @@ export function openSettings() {
           toast('Nombre actualizado');
         }
         if (t.name === 'interval') await store.updateSettings({ nextIntervalMin: Number(t.value) });
+        if (t.name === 'remember') {
+          setRemember(t.checked);
+          // Mueve la sesión actual al almacenamiento que corresponde
+          try { const { data } = await account.client.auth.getSession(); if (data.session) await account.client.auth.setSession(data.session); } catch { /* nada */ }
+          toast(t.checked ? 'La sesión se mantendrá iniciada' : 'Tendrás que entrar al volver a abrir la app');
+        }
         if (t.name === 'restore' && t.files?.[0]) await restore(t.files[0]);
       });
 
@@ -165,6 +266,24 @@ export function openSettings() {
         }
         if (e.target.closest('[data-go-profile]')) { close(); location.hash = 'nia'; return; }
         if (e.target.closest('[data-signout]')) return signOut();
+        if (e.target.closest('[data-invite]')) return showInvite();
+        if (e.target.closest('[data-join]')) return askJoin();
+        const member = e.target.closest('[data-remove-member]');
+        if (member) {
+          const ok = await confirmDialog({ title: '¿Quitar el acceso?', message: `${member.dataset.email || 'Esta cuenta'} dejará de ver y apuntar en tu diario. Lo ya registrado se queda.`, confirmLabel: 'Quitar acceso' });
+          if (!ok) return;
+          try { await removeMember(member.dataset.removeMember); account.family = await familyInfo(); store.emit(); toast('Acceso quitado'); }
+          catch (ex) { toast(ex.message); }
+          return;
+        }
+        if (e.target.closest('[data-leave]')) {
+          const ok = await confirmDialog({ title: '¿Dejar de compartir?', message: 'Dejarás de ver este diario. Lo ya registrado se queda en él. Podrás volver con un código nuevo.', confirmLabel: 'Dejar de compartir' });
+          if (!ok) return;
+          try { await leaveFamily(); } catch (ex) { return toast(ex.message); }
+          toast('Has dejado de compartir el diario');
+          setTimeout(restartApp, 700);
+          return;
+        }
         if (e.target.closest('[data-sync-now]')) {
           await store.adapter.pull();
           return toast(store.sync?.error ? 'Sin conexión: se reintentará solo' : 'Todo sincronizado');
