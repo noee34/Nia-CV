@@ -15,7 +15,7 @@ await mkdir(shots, { recursive: true });
 const users = new Map(); // email -> { id, password }
 const tables = { biberones: [], deposiciones: [], ajustes: [], album: [] };
 const pages = new Set();
-const members = new Map(); // miembro -> propietario (familias)
+const members = new Map(); // miembro -> propietario (solo miembros activos; salir/quitar = inactivo)
 const invites = new Map(); // código -> { owner, expires, usedBy }
 const emailOf = (id) => [...users].find(([, u]) => u.id === id)?.[0] || '';
 const familyOf = (id) => members.get(id) || id; // igual que privado.mi_familia()
