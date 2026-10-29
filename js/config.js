@@ -6,5 +6,5 @@
 // sus propios registros). NUNCA pongas aquí la "service_role key".
 //
 // Si se dejan vacíos, Nia CV funciona en modo local (sin usuario ni nube).
-export const SUPABASE_URL = '';
-export const SUPABASE_ANON_KEY = '';
+export const SUPABASE_URL = 'https://wlwaavtzhqltpeyzlhqp.supabase.co';
+export const SUPABASE_ANON_KEY = 'sb_publishable_Y4XyJa_VQHHGBWwIelDS8w_UIVWlo0z';

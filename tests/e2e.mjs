@@ -17,6 +17,8 @@ const ctx = await browser.newContext({
   timezoneId: 'Europe/Madrid',
   colorScheme: process.env.SCHEME || 'light',
 });
+// Esta prueba es del modo sin cuenta: simula un config.js vacío.
+await ctx.route('**/js/config.js', (r) => r.fulfill({ contentType: 'text/javascript', body: "export const SUPABASE_URL = ''; export const SUPABASE_ANON_KEY = '';" }));
 const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));

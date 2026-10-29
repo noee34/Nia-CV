@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 const { chromium, devices } = createRequire(import.meta.url)('playwright');
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ ...devices['iPhone 13'], locale: 'es-ES' });
+await ctx.route('**/js/config.js', (r) => r.fulfill({ contentType: 'text/javascript', body: "export const SUPABASE_URL = ''; export const SUPABASE_ANON_KEY = '';" }));
 const page = await ctx.newPage();
 await page.goto(process.env.APP_URL || 'http://localhost:5173/');
 await page.evaluate(() => navigator.serviceWorker.ready);
