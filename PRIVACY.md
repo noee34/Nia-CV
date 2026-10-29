@@ -15,12 +15,20 @@ No se piden fechas de nacimiento, datos de salud adicionales, ubicación, contac
 ningún dato de identificación de la familia.
 
 ## Dónde se guardan
-Exclusivamente en el almacenamiento local del dispositivo en el que usas la app
+**Versión con cuenta (usuario y contraseña):** en el dispositivo y en una base de datos
+Supabase (Postgres) del proyecto del responsable de la app, con conexión cifrada (HTTPS).
+Reglas de seguridad a nivel de fila (Row Level Security) impiden que una cuenta lea o
+modifique registros de otra. La contraseña la gestiona Supabase Auth y nunca se guarda en
+texto plano. Al cerrar sesión se borra la copia del dispositivo. Para borrar la cuenta y
+todos sus datos, el responsable puede eliminar el usuario en Supabase (los registros se
+borran en cascada).
+
+**Versión sin cuenta:** exclusivamente en el almacenamiento local del dispositivo en el que usas la app
 (IndexedDB del navegador / de la app instalada). Funciona sin conexión a Internet.
 
 ## Qué NO hace la app
-- No requiere crear una cuenta.
-- No envía tus registros a ningún servidor propio ni de terceros.
+- En la versión sin cuenta, no envía tus registros a ningún servidor.
+- En la versión con cuenta, solo los envía a la base de datos de Supabase descrita arriba.
 - No incluye analíticas, cookies de seguimiento, publicidad ni SDK de terceros.
 - No carga recursos externos: las fuentes e ilustraciones van incluidas en la propia app.
 

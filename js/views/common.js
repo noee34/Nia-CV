@@ -46,3 +46,15 @@ export function emptyState(title, sub = '', size = 120) {
 
 export const summaryCell = (num, unit, label) =>
   `<div><div class="num">${num}${unit ? `<small>${unit}</small>` : ''}</div><div class="lbl">${label}</div></div>`;
+
+/** Texto del estado de sincronización (null = sin nube). */
+export function syncLabel(sync) {
+  if (!sync) return { short: '', long: '', tone: '' };
+  if (sync.pending && (sync.error || sync.online === false)) {
+    const n = `${sync.pending} ${sync.pending === 1 ? 'cambio' : 'cambios'}`;
+    return { short: `Sin conexión · ${sync.pending} por subir`, long: `Sin conexión. ${n} guardado${sync.pending === 1 ? '' : 's'} en este dispositivo; se subirá${sync.pending === 1 ? '' : 'n'} solo${sync.pending === 1 ? '' : 's'}.`, tone: 'warn' };
+  }
+  if (sync.pending || sync.syncing) return { short: 'Guardando…', long: 'Subiendo cambios a la nube…', tone: 'busy' };
+  if (sync.error) return { short: 'Sin conexión', long: 'Sin conexión con la nube. Lo que registres se guardará aquí y se subirá después.', tone: 'warn' };
+  return { short: 'En la nube', long: sync.lastSync ? `Todo guardado en la nube · ${new Date(sync.lastSync).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}` : 'Conectando con la nube…', tone: 'ok' };
+}

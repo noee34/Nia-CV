@@ -22,10 +22,11 @@ function req(r) {
   });
 }
 
-class IDBAdapter {
+export class IDBAdapter {
+  constructor(name = DB_NAME) { this.name = name; }
   async open() {
     this.db = await new Promise((resolve, reject) => {
-      const r = indexedDB.open(DB_NAME, DB_VERSION);
+      const r = indexedDB.open(this.name, DB_VERSION);
       r.onupgradeneeded = () => {
         const db = r.result;
         for (const t of TYPES) {
@@ -153,7 +154,7 @@ export class CloudAdapter {
 }
 
 /** Memoria volátil: último recurso para que la app no se rompa (se avisa al usuario). */
-class MemoryAdapter extends LocalStorageAdapter {
+export class MemoryAdapter extends LocalStorageAdapter {
   constructor() { super(); this.mem = {}; }
   read(t) { return this.mem[t] || {}; }
   write(t, o) { this.mem[t] = o; }
@@ -176,7 +177,12 @@ class Store {
     this.backend = 'none';
   }
 
-  async init() {
+  /**
+   * `options.adapter` permite inyectar un adaptador ya elegido (p. ej. la
+   * sincronización con Supabase tras iniciar sesión).
+   */
+  async init(options = {}) {
+    if (options.adapter) return this.initWith(options.adapter, options.backend, options);
     // Dentro de claude.ai el diario vive en la nube y se comparte entre dispositivos.
     this.cloudExpected = typeof globalThis.claude?.use === 'function';
     let cloudDb = null;
@@ -193,6 +199,18 @@ class Store {
         break;
       } catch (e) { console.warn('Almacenamiento no disponible:', name, e); }
     }
+    await this.load();
+  }
+
+  async initWith(adapter, backend, { account = null } = {}) {
+    await adapter.open();
+    this.adapter = adapter;
+    this.backend = backend;
+    this.account = account;
+    await this.load();
+  }
+
+  async load() {
     for (const t of TYPES) this.data[t] = await this.adapter.getAll(t);
     const saved = await this.adapter.getMeta('settings');
     this.settings = { ...DEFAULT_SETTINGS, ...(saved || {}) };
@@ -201,11 +219,15 @@ class Store {
         onRecords: () => { for (const t of TYPES) this.data[t] = this.adapter.cache[t].slice(); this.emit(); },
         onSettings: (v) => { this.settings = { ...DEFAULT_SETTINGS, ...(v || {}) }; this.emit(); },
         onError: (e) => console.warn('Sincronización detenida', e),
+        onStatus: () => this.emit(),
       });
     }
     // Pide al navegador que no borre los datos por falta de espacio.
     try { this.persisted = await navigator.storage?.persist?.(); } catch { this.persisted = false; }
   }
+
+  /** Estado de la sincronización ({ online, pending, syncing, lastSync, error }) o null si no hay. */
+  get sync() { return this.adapter?.state ?? null; }
 
   subscribe(fn) { this.listeners.add(fn); return () => this.listeners.delete(fn); }
   emit() { this.listeners.forEach((fn) => fn()); }

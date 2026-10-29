@@ -11,7 +11,23 @@ Funciona sin conexión, no necesita cuenta y guarda los datos sólo en el dispos
 
 ---
 
-## 0. Versión en la nube (cualquier dispositivo con Internet)
+## Versión web con usuario y contraseña (recomendada)
+
+Web publicada con **GitHub Pages**, cuentas con contraseña y datos en la nube con
+**Supabase**. Cada registro se guarda primero en el dispositivo y se sube a la nube; si no hay
+conexión, espera y se sube solo. Guía paso a paso: **[PUESTA-EN-MARCHA.md](PUESTA-EN-MARCHA.md)**.
+
+Piezas: `js/config.js` (URL y clave pública de Supabase), `supabase/schema.sql` (tablas y
+reglas de seguridad por usuario), `js/auth.js` (acceso), `js/sync.js` (guardar en local +
+bandeja de envío + sincronización), `js/remote-supabase.js` (conexión con Supabase),
+`js/vendor/supabase.js` (supabase-js 2.117.3, MIT, incluido para funcionar sin conexión).
+Con `config.js` vacío la app funciona en modo local, sin cuenta.
+
+Pruebas: `tests/sync.test.mjs` (envío diferido, reintentos, cambios de otro dispositivo) y
+`tests/e2e-cloud.mjs` (dos dispositivos contra una nube simulada: registro, acceso, en vivo,
+sin conexión, cierre de sesión y aislamiento entre cuentas).
+
+## 0. Versión en claude.ai (alternativa)
 
 Nia CV está publicada como página privada de claude.ai:
 **https://claude.ai/artifact/VbZjPjZUgSSML29PVVnZaJ**

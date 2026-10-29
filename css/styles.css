@@ -508,3 +508,39 @@ textarea.notes:focus { border-color: var(--blue-deep); }
 .view:has(.dock) { padding-bottom: calc(var(--tabbar-h) + var(--safe-b) + 110px); }
 .settings-row .grow { white-space: normal; }
 .settings-row input[type="text"] { width: 40%; min-width: 6ch; }
+
+/* ---------- Acceso (usuario y contraseña) ---------- */
+.auth-view { padding-bottom: calc(40px + var(--safe-b)); }
+.auth { max-width: 420px; margin: 0 auto; display: flex; flex-direction: column; }
+.auth-brand { margin: 8px 0 4px; }
+.auth .hero-art { width: 190px; align-self: flex-end; margin: -24px -8px 4px 0; }
+.auth-sub { margin: 10px 0 6px; font-size: .95rem; }
+.auth-form { display: flex; flex-direction: column; gap: 16px; margin-top: 14px; }
+.auth-field { display: flex; flex-direction: column; gap: 8px; }
+.auth-field .eyebrow { color: var(--ink-soft); }
+.auth-input {
+  min-height: 54px; border-radius: var(--r-ctl); border: 1px solid var(--line-strong); background: var(--surface);
+  padding: 0 16px; font-size: 1.05rem; outline: none; width: 100%; color: var(--ink);
+}
+.auth-input:focus { border-color: var(--blue-deep); box-shadow: 0 0 0 3px var(--blue-wash); }
+.auth-pass { position: relative; display: block; }
+.auth-pass .auth-input { padding-right: 84px; }
+.auth-eye { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); min-height: 44px; padding: 0 12px; color: var(--accent-ink); font-weight: 500; font-size: .9rem; }
+.auth .form-error { margin: 0; min-height: 0; text-align: left; }
+.auth .form-error:empty { display: none; }
+.auth-links { display: flex; flex-direction: column; align-items: center; margin-top: 12px; }
+.auth-foot { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 18px; }
+
+/* ---------- Indicador de sincronización ---------- */
+.topbar-end { display: flex; align-items: center; gap: 2px; }
+.sync-pill {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 12px; border-radius: 999px;
+  font-size: .76rem; font-weight: 500; color: var(--ink-soft); background: var(--surface); border: 1px solid var(--line);
+  white-space: nowrap;
+}
+.sync-pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--sage); flex: none; }
+.sync-pill.busy i { background: var(--blue-deep); animation: pulse 1s ease-in-out infinite alternate; }
+.sync-pill.warn { background: var(--terra-wash); color: var(--danger); border-color: transparent; }
+.sync-pill.warn i { background: var(--terra); }
+@keyframes pulse { from { opacity: .35; } to { opacity: 1; } }
+@media (max-width: 360px) { .sync-pill { padding: 0 9px; } }

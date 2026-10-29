@@ -21,6 +21,7 @@
 </head>
 <body>
   <main class="app">
+    <section class="view auth-view" id="auth" aria-label="Acceso" hidden></section>
     <section class="view" id="view-hoy" aria-label="Hoy"></section>
     <section class="view" id="view-biberones" aria-label="Biberones" hidden></section>
     <section class="view" id="view-cacas" aria-label="Cacas" hidden></section>
@@ -28,6 +29,7 @@
   </main>
   <nav class="tabbar" id="tabbar" aria-label="Secciones"></nav>
   <noscript><p style="padding:24px;font-family:sans-serif">Nia CV necesita JavaScript activado.</p></noscript>
+  <script src="js/vendor/supabase.js" defer></script>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>

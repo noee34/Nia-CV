@@ -4,8 +4,10 @@ import { icons, logo, paw } from '../art.js';
 import { openSheet, confirmDialog, toast, esc, $ } from '../ui.js';
 import { toCSV, toBackup, parseBackup, mergeRecords } from '../data-io.js';
 import { dayKey } from '../dates.js';
+import { signOut } from '../account.js';
+import { syncLabel } from './common.js';
 
-export const APP_VERSION = '1.0.0';
+export const APP_VERSION = '1.1.0';
 
 const INTERVALS = [[0, 'Sin referencia'], [120, 'Cada 2 h'], [150, 'Cada 2 h 30'], [180, 'Cada 3 h'], [210, 'Cada 3 h 30'], [240, 'Cada 4 h']];
 
@@ -48,6 +50,13 @@ export function openSettings() {
           <button type="button" class="icon-btn" data-close aria-label="Cerrar">${icons.close()}</button>
         </div>
 
+        ${store.backend === 'supabase' ? `<div class="eyebrow" style="margin-top:6px">Cuenta</div>
+        <div class="settings-group">
+          <div class="settings-row"><span class="ico">${icons.shield({ size: 18 })}</span><span class="grow">${esc(store.account || '')}<br><span class="subtle">${esc(syncLabel(store.sync).long)}</span></span></div>
+          <button class="settings-row" data-sync-now><span class="ico">${icons.upload({ size: 18 })}</span><span class="grow">Sincronizar ahora</span></button>
+          <button class="settings-row danger" data-signout><span class="ico">${icons.close({ size: 18 })}</span><span class="grow">Cerrar sesión</span></button>
+        </div>
+        <div style="margin-top:22px"></div>` : ''}
         <div class="eyebrow" style="margin-top:6px">Personal</div>
         <div class="settings-group">
           <label class="settings-row"><span class="ico">${icons.heart({ size: 18 })}</span><span class="grow">Nombre del bebé</span>
@@ -76,7 +85,10 @@ export function openSettings() {
 
         <div class="eyebrow" style="margin-top:22px">Privacidad</div>
         <div class="card prose" style="margin-top:10px">
-          ${cloud ? `<p><strong>Tus registros se guardan en la nube, dentro de esta página privada de claude.ai.</strong> Puedes abrirla desde cualquier dispositivo con tu cuenta de Claude, y los cambios se sincronizan al momento.</p>
+          ${store.backend === 'supabase' ? `<p><strong>Tus registros se guardan primero en este dispositivo y después en la nube (Supabase), en tu cuenta.</strong> Puedes entrar desde cualquier móvil, tablet u ordenador con tu correo y contraseña.</p>
+          <p>Si no hay conexión, lo que registres queda guardado aquí y se sube solo en cuanto vuelva la red. El indicador de la pantalla Hoy te dice si todo está en la nube.</p>
+          <p>La base de datos aplica reglas de seguridad: cada cuenta solo puede leer y modificar sus propios registros. La conexión va cifrada (HTTPS). Nia CV no tiene analíticas ni publicidad y no comparte tus datos con nadie.</p>
+          <p>Al cerrar sesión se borra la copia de este dispositivo; los datos siguen en tu cuenta.</p>` : cloud ? `<p><strong>Tus registros se guardan en la nube, dentro de esta página privada de claude.ai.</strong> Puedes abrirla desde cualquier dispositivo con tu cuenta de Claude, y los cambios se sincronizan al momento.</p>
           <p>Solo tú tienes acceso, salvo que la compartas desde el menú Compartir. Para que otra persona (por ejemplo, la otra mamá o el otro papá) pueda registrar, compártela con ella como Colaborador o Editor.</p>
           <p>Nia CV no tiene analíticas ni publicidad y no envía tus datos a ningún otro servicio. Los registros solo salen de aquí si exportas un CSV o una copia de seguridad.</p>
           <p>Necesita conexión a Internet. Si borras esta página de claude.ai, se borran también sus registros: haz copias de seguridad de vez en cuando.</p>` : `<p><strong>Tus registros no salen de este iPhone.</strong> Nia CV no tiene cuentas, servidores, analíticas ni publicidad, y no envía datos a terceros.</p>
@@ -131,10 +143,15 @@ export function openSettings() {
           }
           return;
         }
+        if (e.target.closest('[data-signout]')) return signOut();
+        if (e.target.closest('[data-sync-now]')) {
+          await store.adapter.pull();
+          return toast(store.sync?.error ? 'Sin conexión: se reintentará solo' : 'Todo sincronizado');
+        }
         if (e.target.closest('[data-wipe]')) {
           const ok = await confirmDialog({
             title: '¿Borrar todos los registros?',
-            message: 'Se eliminarán todos los biberones y deposiciones de este dispositivo. Esta acción no se puede deshacer. Te recomendamos crear antes una copia de seguridad.',
+            message: (store.backend === 'supabase' ? 'Se eliminarán todos los biberones y deposiciones de tu cuenta, en todos los dispositivos.' : 'Se eliminarán todos los biberones y deposiciones de este dispositivo.') + ' Esta acción no se puede deshacer. Te recomendamos crear antes una copia de seguridad.',
             confirmLabel: 'Borrar todo',
           });
           if (!ok) return;

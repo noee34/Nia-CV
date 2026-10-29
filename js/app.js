@@ -1,7 +1,13 @@
 // Arranque, navegación por pestañas y gestión de eventos.
-import { store } from './store.js';
+import { store, IDBAdapter } from './store.js';
+import { SyncedAdapter } from './sync.js';
+import { SupabaseRemote } from './remote-supabase.js';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
+import { showAuth } from './auth.js';
+import { account, LAST_USER } from './account.js';
+import { mergeRecords } from './data-io.js';
 import { icons } from './art.js';
-import { openSheet, onSwipe, shiftMonth, toast, $, esc } from './ui.js';
+import { openSheet, onSwipe, shiftMonth, toast, confirmDialog, $, esc } from './ui.js';
 import { dayKey, addDays, weekStart, parseDayKey } from './dates.js';
 import { openBottleForm, openPoopForm } from './forms.js';
 import { renderToday } from './views/today.js';
@@ -172,7 +178,7 @@ document.addEventListener('keydown', (e) => {
   if (tr && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); selectDiaryDay(tr.dataset.key); }
 });
 
-window.addEventListener('hashchange', () => go(location.hash.slice(1)));
+window.addEventListener('hashchange', () => { if (started && TABS[location.hash.slice(1)]) go(location.hash.slice(1)); });
 
 /* ---------- Cambio de día a medianoche y relojes relativos ---------- */
 
@@ -185,33 +191,117 @@ function tick() {
     if (state.poopsSelected === old) { state.poopsSelected = now; state.poopsMonth = ym(now); }
     if (state.diarySelected === old) selectDiaryDay(now);
   }
-  if (!document.querySelector('.sheet-root, .dialog-root')) render();
+  if (started && !document.querySelector('.sheet-root, .dialog-root')) render();
 }
 setInterval(tick, 60000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
 
 /* ---------- Arranque ---------- */
 
-async function boot() {
-  try {
-    await store.init();
-  } catch (e) {
-    console.error(e);
-    $('#view-hoy').hidden = false;
-    $('#view-hoy').innerHTML = `<div class="empty"><div class="empty-title">No se pudo abrir el diario</div><div class="empty-sub">${esc(e.message)}</div></div>`;
-    return;
-  }
+let started = false;
+
+function fail(e) {
+  console.error(e);
+  $('#view-hoy').hidden = false;
+  $('#view-hoy').innerHTML = `<div class="empty"><div class="empty-title">No se pudo abrir el diario</div><div class="empty-sub">${esc(e.message)}</div></div>`;
+}
+
+function start() {
   store.subscribe(render);
   onSwipe($('#view-biberones'), stepBottleDay);
   state.tab = TABS[location.hash.slice(1)] ? location.hash.slice(1) : 'hoy';
+  started = true;
   render();
   document.documentElement.classList.add('ready');
-  if (store.cloudExpected && store.backend !== 'cloud') toast('Sin conexión con la nube: los cambios se guardan solo en este dispositivo.');
-  else if (store.backend === 'memory') toast('Este navegador no permite guardar datos. Usa Safari normal, no privado.');
+}
 
+function registerSW() {
   if ('serviceWorker' in navigator && location.protocol !== 'file:' && !store.cloudExpected) {
     navigator.serviceWorker.register('./sw.js').catch((err) => console.warn('SW', err));
   }
+}
+
+/* Modo cuenta: usuario y contraseña con Supabase, datos en la nube. */
+
+async function bootSupabase() {
+  const client = globalThis.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+  });
+  account.client = client;
+  const authRoot = $('#auth');
+  let recovering = false;
+  client.auth.onAuthStateChange((event) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      recovering = true;
+      showAuth(authRoot, client, { mode: 'recovery', onSession: (s) => (started ? null : enter(s)) });
+    }
+  });
+
+  let session = null;
+  try { session = (await client.auth.getSession()).data.session; } catch (e) { console.warn(e); }
+  if (recovering) return;
+  if (session) return enter(session);
+
+  // Sin red pero con una sesión anterior en este dispositivo: abrir los datos
+  // guardados en local; se subirán en cuanto vuelva la conexión.
+  const last = readLastUser();
+  if (last && navigator.onLine === false) return enter({ user: last }, { offline: true });
+  showAuth(authRoot, client, { mode: 'login', onSession: enter });
+}
+
+async function enter(session, { offline = false } = {}) {
+  const user = { id: session.user.id, email: session.user.email };
+  try { localStorage.setItem(LAST_USER, JSON.stringify(user)); } catch { /* sin almacenamiento */ }
+  account.user = user;
+  const adapter = new SyncedAdapter(new IDBAdapter(`nia-cv-${user.id}`), new SupabaseRemote(account.client, user.id));
+  try {
+    await store.init({ adapter, backend: 'supabase', account: user.email });
+  } catch (e) { return fail(e); }
+  start();
+  registerSW();
+  if (offline) toast('Sin conexión: lo que registres se subirá a la nube al volver la red.');
+  offerLocalImport();
+}
+
+function readLastUser() {
+  try { return JSON.parse(localStorage.getItem(LAST_USER) || 'null'); } catch { return null; }
+}
+
+/** Si este dispositivo tenía registros del modo local, ofrece subirlos a la cuenta. */
+async function offerLocalImport() {
+  try {
+    if (localStorage.getItem('nia-cv:imported')) return;
+    const legacy = new IDBAdapter();
+    await legacy.open();
+    const bottles = await legacy.getAll('bottles');
+    const poops = await legacy.getAll('poops');
+    legacy.db.close();
+    if (!bottles.length && !poops.length) return;
+    const ok = await confirmDialog({
+      title: 'Registros en este dispositivo',
+      message: `Hay ${bottles.length} biberones y ${poops.length} deposiciones guardados aquí sin cuenta. ¿Quieres subirlos a tu cuenta? No se duplican.`,
+      confirmLabel: 'Subir a mi cuenta', cancelLabel: 'Ahora no', danger: false,
+    });
+    localStorage.setItem('nia-cv:imported', ok ? 'yes' : 'no');
+    if (!ok) return;
+    for (const [t, recs] of [['bottles', bottles], ['poops', poops]]) {
+      const { merged } = mergeRecords(store.all(t), recs);
+      const fresh = merged.filter((r) => !store.get(t, r.id) || store.get(t, r.id) !== r);
+      if (fresh.length) { await store.adapter.putMany(t, fresh); store.data[t] = merged; }
+    }
+    store.emit();
+    toast('Registros subidos a tu cuenta');
+  } catch (e) { console.warn('Importación local', e); }
+}
+
+async function boot() {
+  const inClaude = typeof globalThis.claude?.use === 'function';
+  if (!inClaude && SUPABASE_URL && SUPABASE_ANON_KEY && globalThis.supabase?.createClient) return bootSupabase();
+  try { await store.init(); } catch (e) { return fail(e); }
+  start();
+  if (store.cloudExpected && store.backend !== 'cloud') toast('Sin conexión con la nube: los cambios se guardan solo en este dispositivo.');
+  else if (store.backend === 'memory') toast('Este navegador no permite guardar datos. Usa Safari normal, no privado.');
+  registerSW();
 }
 
 boot();

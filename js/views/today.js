@@ -4,7 +4,7 @@ import { icons, logo, heroIllustration, paw, consistencyIcon, smallStar } from '
 import { esc } from '../ui.js';
 import { dayKey, fmtLongDate, fmtTime } from '../dates.js';
 import { onDay, bottleSummary, poopSummary, nextReference, CONSISTENCIES, byTimeAsc } from '../stats.js';
-import { ml, fmtAgo, plural, emptyState } from './common.js';
+import { ml, fmtAgo, plural, emptyState, syncLabel } from './common.js';
 
 export function renderToday() {
   const key = dayKey();
@@ -26,7 +26,7 @@ export function renderToday() {
   return `
   <header class="topbar">
     ${logo()}
-    <button class="icon-btn" data-action="settings" aria-label="Ajustes">${icons.gear()}</button>
+    <span class="topbar-end">${syncPill()}<button class="icon-btn" data-action="settings" aria-label="Ajustes">${icons.gear()}</button></span>
   </header>
 
   <section class="hero">
@@ -97,4 +97,10 @@ function timelineItem(e) {
     <span class="tl-main"><span class="tl-title" style="display:block">${title}</span>${meta ? `<span class="tl-meta" style="display:block">${meta}</span>` : ''}</span>
     <span class="tl-time">${fmtTime(e.at)}</span>
   </button></li>`;
+}
+
+function syncPill() {
+  const l = syncLabel(store.sync);
+  if (!l.short) return '';
+  return `<button class="sync-pill ${l.tone}" data-action="settings" aria-label="${esc(l.long)}"><i></i>${esc(l.short)}</button>`;
 }
