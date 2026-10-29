@@ -7,6 +7,7 @@ import { showAuth } from './auth.js';
 import { account, LAST_USER } from './account.js';
 import { mergeRecords } from './data-io.js';
 import { icons } from './art.js';
+import { applyTheme } from './theme.js';
 import { openSheet, onSwipe, shiftMonth, toast, confirmDialog, $, esc } from './ui.js';
 import { dayKey, addDays, weekStart, parseDayKey } from './dates.js';
 import { openBottleForm, openPoopForm } from './forms.js';
@@ -295,6 +296,7 @@ async function offerLocalImport() {
 }
 
 async function boot() {
+  applyTheme();
   const inClaude = typeof globalThis.claude?.use === 'function';
   if (!inClaude && SUPABASE_URL && SUPABASE_ANON_KEY && globalThis.supabase?.createClient) return bootSupabase();
   try { await store.init(); } catch (e) { return fail(e); }

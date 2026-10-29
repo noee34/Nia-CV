@@ -6,8 +6,9 @@ import { toCSV, toBackup, parseBackup, mergeRecords } from '../data-io.js';
 import { dayKey } from '../dates.js';
 import { signOut } from '../account.js';
 import { syncLabel } from './common.js';
+import { THEMES, getTheme, setTheme } from '../theme.js';
 
-export const APP_VERSION = '1.1.0';
+export const APP_VERSION = '1.3.0';
 
 const INTERVALS = [[0, 'Sin referencia'], [120, 'Cada 2 h'], [150, 'Cada 2 h 30'], [180, 'Cada 3 h'], [210, 'Cada 3 h 30'], [240, 'Cada 4 h']];
 
@@ -57,7 +58,18 @@ export function openSettings() {
           <button class="settings-row danger" data-signout><span class="ico">${icons.close({ size: 18 })}</span><span class="grow">Cerrar sesión</span></button>
         </div>
         <div style="margin-top:22px"></div>` : ''}
-        <div class="eyebrow" style="margin-top:6px">Personal</div>
+        <div class="eyebrow" style="margin-top:6px">Apariencia</div>
+        <div class="settings-group">
+          <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:10px">
+            <span style="display:flex;align-items:center;gap:14px"><span class="ico">${getTheme() === 'dark' ? icons.moon({ size: 18 }) : icons.sun({ size: 18 })}</span>
+              <span class="grow">Modo de color<br><span class="subtle">${getTheme() === 'auto' ? 'Sigue el modo claro u oscuro del dispositivo' : 'Solo en este dispositivo'}</span></span></span>
+            <div class="segmented" role="radiogroup" aria-label="Modo de color">
+              ${THEMES.map(([v, l]) => `<button type="button" role="radio" aria-checked="${getTheme() === v}" class="${getTheme() === v ? 'on' : ''}" data-theme-pick="${v}">${l}</button>`).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div class="eyebrow" style="margin-top:22px">Personal</div>
         <div class="settings-group">
           <label class="settings-row"><span class="ico">${icons.heart({ size: 18 })}</span><span class="grow">Nombre del bebé</span>
             <input type="text" name="babyName" value="${esc(s.babyName)}" maxlength="24" autocapitalize="words" enterkeyhint="done"></label>
@@ -142,6 +154,12 @@ export function openSettings() {
             if (ok) toast('Copia de seguridad creada');
           }
           return;
+        }
+        const pick = e.target.closest('[data-theme-pick]');
+        if (pick) {
+          setTheme(pick.dataset.themePick);
+          store.emit(); // vuelve a dibujar Ajustes y la pantalla de fondo
+          return toast({ auto: 'Modo automático', light: 'Modo claro', dark: 'Modo oscuro' }[pick.dataset.themePick]);
         }
         if (e.target.closest('[data-signout]')) return signOut();
         if (e.target.closest('[data-sync-now]')) {

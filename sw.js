@@ -1,11 +1,11 @@
 // Service worker: guarda la app en caché para abrirla y usarla sin conexión.
 // Los REGISTROS no pasan por aquí: viven en IndexedDB en el dispositivo.
-const VERSION = 'nia-cv-v1.2.0';
+const VERSION = 'nia-cv-v1.3.0';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest', './css/styles.css',
   './js/app.js', './js/store.js', './js/dates.js', './js/stats.js', './js/ui.js', './js/art.js',
   './js/forms.js', './js/data-io.js', './js/sync.js', './js/remote-supabase.js', './js/config.js',
-  './js/auth.js', './js/account.js', './js/vendor/supabase.js',
+  './js/auth.js', './js/account.js', './js/theme.js', './js/vendor/supabase.js',
   './js/views/common.js', './js/views/today.js', './js/views/bottles.js', './js/views/poops.js',
   './js/views/diary.js', './js/views/settings.js',
   './fonts/cormorant-garamond-latin-500-normal.woff2', './fonts/cormorant-garamond-latin-600-normal.woff2',

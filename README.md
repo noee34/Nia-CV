@@ -112,8 +112,8 @@ observación opcional.
 (gotita, forma redondeada, bolitas; “Muy líquida” aparte) · observaciones opcionales con
 etiquetas rápidas · botón único “Guardar deposición”.
 
-Otros detalles: confirmación visual al guardar, confirmación antes de eliminar, mensajes
-vacíos ilustrados, modo noche cálido automático (según el ajuste del iPhone), compatible con
+Otros detalles: **modo claro, oscuro o automático** (Ajustes → Apariencia; se recuerda en cada dispositivo), confirmación visual al guardar, confirmación antes de eliminar, mensajes
+vacíos ilustrados, compatible con
 el **tamaño de texto dinámico** de iOS, VoiceOver (etiquetas accesibles), áreas táctiles
 ≥ 44 pt y respeto a “Reducir movimiento”.
 
