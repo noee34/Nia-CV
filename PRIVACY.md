@@ -11,6 +11,7 @@ para que tus datos sean sólo tuyos.
   deposiciones y observaciones opcionales.
 - Tus preferencias (cantidades rápidas, referencia de próximo biberón).
 - Si los indicas, datos personales del bebé: fecha de nacimiento, grupo sanguíneo y talla.
+- Si las apuntas, citas médicas del bebé (tipo, fecha, profesional, lugar, notas y avisos).
 - Si las eliges, una foto de cabecera y las fotos del álbum mes a mes (con su nota),
   reducidas en el propio dispositivo antes de guardarlas.
 

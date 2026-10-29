@@ -8,7 +8,7 @@
 // Al traer datos de la nube (pull) se reaplican encima los cambios aún no
 // enviados, para que nunca desaparezca de la pantalla algo recién registrado.
 
-const TYPES = ['bottles', 'poops', 'album'];
+const TYPES = ['bottles', 'poops', 'album', 'citas'];
 const RETRY_MS = 15000;
 
 export class SyncedAdapter {
@@ -20,7 +20,7 @@ export class SyncedAdapter {
     this.local = local;
     this.remote = remote;
     this.outbox = [];
-    this.cache = { bottles: [], poops: [], album: [] };
+    this.cache = { bottles: [], poops: [], album: [], citas: [] };
     this.state = { online: globalThis.navigator?.onLine ?? true, pending: 0, syncing: false, lastSync: null, error: null };
     this.handlers = {};
   }
@@ -161,7 +161,7 @@ export class SyncedAdapter {
   subscribe(handlers) {
     this.handlers = handlers;
     // Si la nube dice qué tabla cambió, solo se trae esa (las fotos del álbum pesan más).
-    const BY_TABLE = { biberones: 'bottles', deposiciones: 'poops', album: 'album', ajustes: null };
+    const BY_TABLE = { biberones: 'bottles', deposiciones: 'poops', album: 'album', citas: 'citas', ajustes: null };
     let t;
     let pending = new Set();
     const soon = (change) => {

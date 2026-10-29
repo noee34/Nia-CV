@@ -9,9 +9,13 @@ const PAGE = 1000; // Supabase devuelve como máximo 1000 filas por petición
 const CHUNK = 500;
 
 /** Tabla de Supabase para cada tipo de registro de la app. */
-export const TABLE = { bottles: 'biberones', poops: 'deposiciones', album: 'album' };
+export const TABLE = { bottles: 'biberones', poops: 'deposiciones', album: 'album', citas: 'citas' };
 
 const MAP = {
+  citas: {
+    to: (r) => ({ id: r.id, fecha_hora: r.at, seccion: r.section, tipo: r.kind, titulo: r.title || '', profesional: r.doctor || '', lugar: r.place || '', observaciones: r.notes || '', avisos: r.reminders || [], hecha: Boolean(r.done), creado: r.createdAt, modificado: r.updatedAt }),
+    from: (x) => ({ id: x.id, at: Number(x.fecha_hora), section: x.seccion, kind: x.tipo, title: x.titulo || '', doctor: x.profesional || '', place: x.lugar || '', notes: x.observaciones || '', reminders: (x.avisos || []).map(Number), done: Boolean(x.hecha), createdAt: Number(x.creado), updatedAt: Number(x.modificado) }),
+  },
   album: {
     to: (r) => ({ id: r.id, mes: r.month, foto: r.photo || '', nota: r.notes || '', fecha_hora: r.at, creado: r.createdAt, modificado: r.updatedAt }),
     from: (x) => ({ id: x.id, month: x.mes, photo: x.foto || '', notes: x.nota || '', at: Number(x.fecha_hora), createdAt: Number(x.creado), updatedAt: Number(x.modificado) }),
@@ -75,7 +79,7 @@ export class SupabaseRemote {
   onChange(cb) {
     const filter = `usuario_id=eq.${this.userId}`;
     const ch = this.client.channel(`nia-${this.userId}`);
-    for (const table of ['biberones', 'deposiciones', 'album', 'ajustes']) {
+    for (const table of ['biberones', 'deposiciones', 'album', 'citas', 'ajustes']) {
       ch.on('postgres_changes', { event: '*', schema: 'public', table, filter }, cb);
     }
     ch.subscribe();

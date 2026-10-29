@@ -17,12 +17,15 @@ import { renderPoops } from './views/poops.js';
 import { renderDiary } from './views/diary.js';
 import { openSettings, askJoin } from './views/settings.js';
 import { renderProfile, openProfileForm, openAlbumMonth, setHeaderPhoto, removeHeaderPhoto } from './views/profile.js';
+import { renderMedicine, openCitaForm, openSpecialistName, addToPhoneCalendar } from './views/medicine.js';
+import { upcoming, dueReminders, citaTitle, reminderLabel } from './medical.js';
 
 const TABS = {
   hoy: { label: 'Hoy', icon: icons.home, render: renderToday },
   biberones: { label: 'Biberones', icon: icons.bottle, render: renderBottles },
   cacas: { label: 'Cacas', icon: icons.diaper, render: renderPoops },
   diario: { label: 'Diario', icon: icons.calendar, render: renderDiary },
+  medicina: { label: 'Medicina', icon: icons.medical, render: renderMedicine },
   nia: { label: 'Nia', icon: icons.heart, render: renderProfile },
 };
 
@@ -40,6 +43,11 @@ const state = {
   diaryWeek: weekStart(today0),
   diaryMonth: ym(today0),
   diarySelected: today0,
+  medSection: 'medico',
+  medFilter: 'all',
+  medMonth: ym(today0),
+  medSelected: today0,
+  medHistory: 10,
 };
 
 /* ---------- Render ---------- */
@@ -132,11 +140,31 @@ document.addEventListener('click', (e) => {
       'add-poop-day': () => openPoopForm({ forDay: state.poopsSelected }),
       'bottle-calendar': openBottleCalendar,
       'poops-more': () => { state.poopLimit += 40; render(); },
+      'add-cita': () => openCitaForm({ section: state.medSection, kind: state.medSection === 'medico' && state.medFilter !== 'all' ? state.medFilter : null }),
+      'add-cita-day': () => openCitaForm({ section: state.medSection, forDay: state.medSelected }),
+      'rename-specialist': openSpecialistName,
+      'cal-all': () => addToPhoneCalendar(upcoming(store.all('citas').filter((c) => c.section === state.medSection))),
+      'med-more': () => { state.medHistory += 20; render(); },
       'edit-profile': openProfileForm,
       'remove-photo': removeHeaderPhoto,
       'go-profile': () => { location.hash = 'nia'; },
     };
     return actions[action]?.();
+  }
+
+  const cita = t.closest('[data-cita]');
+  if (cita) { const rec = store.get('citas', cita.dataset.cita); if (rec) openCitaForm({ record: rec }); return; }
+
+  // Medicina
+  if (view?.id === 'view-medicina') {
+    const sec = t.closest('[data-med-section]');
+    if (sec) { state.medSection = sec.dataset.medSection; state.medFilter = 'all'; return render(); }
+    const f = t.closest('[data-med-filter]');
+    if (f) { state.medFilter = f.dataset.medFilter; return render(); }
+    const mb = t.closest('[data-month]');
+    if (mb) { state.medMonth = shiftMonth(...state.medMonth, Number(mb.dataset.month)); return render(); }
+    const db = t.closest('[data-day]');
+    if (db) { state.medSelected = db.dataset.day; state.medMonth = ym(db.dataset.day); return render(); }
   }
 
   const album = t.closest('[data-album]');
@@ -195,7 +223,35 @@ window.addEventListener('hashchange', () => { if (started && TABS[location.hash.
 
 /* ---------- Cambio de día a medianoche y relojes relativos ---------- */
 
+/* ---------- Recordatorios de citas dentro de la app ---------- */
+const REM_KEY = 'nia-cv:avisos-hasta';
+let remindersShown = new Set();
+function checkReminders() {
+  const now = Date.now();
+  let from;
+  try { from = Number(localStorage.getItem(REM_KEY)) || now - 60000; } catch { from = now - 60000; }
+  from = Math.max(from, now - 3 * 86400000); // como mucho, los de los últimos 3 días
+  const due = dueReminders(store.all('citas'), from, now).filter((r) => !remindersShown.has(`${r.cita.id}:${r.minutes}`));
+  try { localStorage.setItem(REM_KEY, String(now)); } catch { /* nada */ }
+  if (!due.length || document.querySelector('.dialog-root')) return;
+  due.forEach((r) => remindersShown.add(`${r.cita.id}:${r.minutes}`));
+  const lines = due.slice(0, 3).map((r) => `• ${citaTitle(r.cita)}: ${relativeDayLabelShort(r.cita.at)} a las ${fmtClock(r.cita.at)} (aviso ${reminderLabel(r.minutes).toLowerCase()})`);
+  confirmDialog({
+    title: due.length === 1 ? 'Recordatorio de cita' : `${due.length} recordatorios de citas`,
+    message: lines.join('\n') + (due.length > 3 ? `\n… y ${due.length - 3} más` : ''),
+    confirmLabel: 'Ver citas', cancelLabel: 'Entendido', danger: false,
+  }).then((ok) => { if (ok) location.hash = 'medicina'; });
+}
+const fmtClock = (ms) => new Date(ms).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+function relativeDayLabelShort(ms) {
+  const d = dayKey(ms), t = dayKey();
+  if (d === t) return 'hoy';
+  if (d === addDays(t, 1)) return 'mañana';
+  return new Date(ms).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+}
+
 function tick() {
+  if (started) checkReminders();
   const now = dayKey();
   if (now !== state.today) {
     const old = state.today;
@@ -225,6 +281,7 @@ function start() {
   state.tab = TABS[location.hash.slice(1)] ? location.hash.slice(1) : 'hoy';
   started = true;
   render();
+  setTimeout(checkReminders, 1500);
   document.documentElement.classList.add('ready');
 }
 

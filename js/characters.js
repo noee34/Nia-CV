@@ -212,6 +212,21 @@ export const balloonScene = () => scene('0 0 340 160', 'Ilustración: Nube y Can
   ${place(pupSVG(F.canela, { eyes: 'open', mouth: 'open', wave: true }), 160, 44, 0.66, true)}
   ${flower(36, 138, 1)}${flower(306, 134, 1, '#B8D7E8')}${star(224, 70, 0.8)}`);
 
+/** MEDICINA: Nube con estetoscopio y Canela con su maletín de médico. */
+const stethoscope = `<path d="M44 100c-2 10 0 22 8 26M76 100c2 10 0 22-8 26" stroke="#5E6F7A" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+  <path d="M52 126q8 6 16 0" stroke="#5E6F7A" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+  <circle cx="60" cy="134" r="5.5" fill="#B8D7E8" stroke="#5E6F7A" stroke-width="2"/>`;
+const doctorBag = (x, y, s = 1) =>
+  `<g transform="translate(${x} ${y}) scale(${s})"><path d="M-10-14q0-7 10-7t10 7" stroke="#8A7B70" stroke-width="3" fill="none"/><rect x="-20" y="-14" width="40" height="28" rx="7" fill="#D7A18C"/><rect x="-20" y="-14" width="40" height="8" rx="4" fill="#C98F79"/><path d="M0-3v12M-6 3h12" stroke="#FFFDF9" stroke-width="3.4" stroke-linecap="round"/></g>`;
+export const medicalScene = () => scene('0 0 340 160', 'Ilustración: Nube con un estetoscopio y Canela con su maletín de médico', `
+  ${cloud(236, 10, 0.75)}${cloud(30, 18, 0.55)}
+  ${hills(340, 160, 0.74)}
+  ${flower(40, 136, 1, '#B8D7E8')}${flower(306, 130, 1)}
+  ${place(pupSVG(F.nube, { eyes: 'open', mouth: 'smile' }) + stethoscope, 92, 30, 0.74)}
+  ${place(pupSVG(F.canela, { eyes: 'closed', mouth: 'open' }), 168, 38, 0.68, true)}
+  ${doctorBag(262, 132, 1.1)}
+  ${heart(84, 50, 1.1)}${star(250, 60, 0.8)}${star(70, 96, 0.6, '#B7C2AE')}`);
+
 /** Estados vacíos: Nube duerme sobre su cojín. */
 export const sleepingScene = (size = 140) => `<svg width="${size}" height="${Math.round(size * 0.66)}" viewBox="0 0 210 138" aria-hidden="true">
   <path d="M178 14a20 20 0 1 0 16 30 16 16 0 1 1-16-30Z" fill="#E8DED1"/>

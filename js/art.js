@@ -33,6 +33,12 @@ export const icons = {
   sun: (o) => svg('<circle cx="12" cy="12" r="4"/><path d="M12 2.8v2M12 19.2v2M21.2 12h-2M4.8 12h-2M18.5 5.5l-1.4 1.4M6.9 17.1l-1.4 1.4M18.5 18.5l-1.4-1.4M6.9 6.9 5.5 5.5"/>', o),
   moon: (o) => svg('<path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10Z"/>', o),
   whatsapp: (o) => svg('<path d="M4.5 19.5l1.2-4A8 8 0 1 1 8.6 18.3Z"/><path d="M9.2 8.6c.3-.6.9-.6 1.2 0l.6 1.3c.1.3 0 .6-.2.8l-.5.5c.6 1.2 1.5 2.1 2.7 2.7l.5-.5c.2-.2.5-.3.8-.2l1.3.6c.6.3.6.9 0 1.2-1.6 1-5.2-.6-6.7-3.6-.6-1.2-.6-2.2.3-2.8Z"/>', o),
+  medical: (o) => svg('<rect x="3.5" y="5.5" width="17" height="14" rx="3.5"/><path d="M9 5.5V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1.5M12 9.5v6M9 12.5h6"/>', o),
+  bell: (o) => svg('<path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 2H5Z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>', o),
+  syringe: (o) => svg('<path d="m17 3 4 4M15 5l4 4M7.5 12.5l4 4M5 19l2.5-2.5M16.5 7.5 8 16l-2-2 8.5-8.5Z"/>', o),
+  stetho: (o) => svg('<path d="M6 3v5a4 4 0 0 0 8 0V3"/><path d="M10 12v2.5a4.5 4.5 0 0 0 9 0V13"/><circle cx="19" cy="11" r="2"/>', o),
+  pill: (o) => svg('<rect x="3.2" y="8.5" width="17.6" height="7" rx="3.5" transform="rotate(-35 12 12)"/><path d="m9.2 8.2 5.6 7.6"/>', o),
+  clipboard: (o) => svg('<rect x="5" y="4.5" width="14" height="16.5" rx="2.5"/><path d="M9 4.5V3.5h6v1M8.5 10h7M8.5 13.5h7M8.5 17h4"/>', o),
   chart: (o) => svg('<path d="M4 20h16"/><rect x="5.5" y="11" width="3" height="6" rx="1"/><rect x="10.5" y="6" width="3" height="11" rx="1"/><rect x="15.5" y="9" width="3" height="8" rx="1"/>', o),
 };
 

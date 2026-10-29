@@ -215,6 +215,21 @@ ninguna serie. Las fuentes son de uso libre (SIL OFL, licencias en `fonts/`).
   actual y admite una foto y una nota. Tabla `album` en Supabase.
 - "Borrar todos los registros" (Ajustes) **no** borra el álbum ni los datos personales.
 
+## Pestaña "Medicina"
+
+- **Médico**: citas de **Vacuna**, **Pediatra**, **Revisión** y **Receta**, con filtros por tipo.
+- **Especialista**: citas con la especialista (**Angela** por defecto; el nombre se cambia
+  con el botón *Nombre*).
+- Cada cita: fecha y hora, título, profesional, lugar, notas y **avisos** (1 semana, 1 día,
+  2 horas, 1 hora, 30 min antes o a la hora). Se puede marcar como hecha, editar y borrar.
+- **Calendario** mensual con puntos (azul = Médico, terracota = Especialista), próximas
+  citas, historial y tarjeta **Próxima cita** en Hoy.
+- **Avisos con la app cerrada**: botón *Añadir al Calendario del iPhone*, que abre la cita
+  como evento de calendario (.ics) con sus alarmas; el aviso lo da el Calendario del iPhone.
+  Con la app abierta, además, sale un recordatorio (y al abrirla, los que tocaron mientras
+  estaba cerrada).
+- Tabla `citas` en Supabase (`supabase/citas.sql`), compartida con la familia.
+
 ## 7. Privacidad
 Ver [`PRIVACY.md`](PRIVACY.md). En resumen: sin cuentas, sin servidores, sin analíticas;
 los datos sólo salen del iPhone si tú exportas un archivo.

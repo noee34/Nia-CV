@@ -2,6 +2,7 @@
 import { store } from '../store.js';
 import { icons, logo, paw, consistencyIcon, smallStar } from '../art.js';
 import { gardenScene, pupIcon, photoFrame } from '../characters.js';
+import { nextCitaCard } from './medicine.js';
 import { esc } from '../ui.js';
 import { dayKey, fmtLongDate, fmtTime, ageText } from '../dates.js';
 import { onDay, bottleSummary, poopSummary, nextReference, CONSISTENCIES, byTimeAsc } from '../stats.js';
@@ -39,6 +40,7 @@ export function renderToday() {
     ? photoFrame(store.settings.photo, `Foto de ${esc(name)}`)
     : `<div class="scene-banner">${gardenScene()}</div>`}
 
+  ${nextCitaCard()}
   <article class="card" aria-labelledby="card-b">
     <div class="card-head">
       <span class="eyebrow" id="card-b">Biberones de hoy</span>

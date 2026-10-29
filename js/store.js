@@ -5,9 +5,9 @@
 // y use `id` + `updatedAt` para resolver conflictos (ver data-io.mergeRecords).
 
 const DB_NAME = 'nia-cv';
-const DB_VERSION = 2; // 2: añade el álbum
+const DB_VERSION = 3; // 2: álbum · 3: citas médicas
 /** Todos los tipos de datos que se guardan y sincronizan. */
-export const TYPES = ['bottles', 'poops', 'album'];
+export const TYPES = ['bottles', 'poops', 'album', 'citas'];
 /** Registros del día a día (los que exporta el CSV y borra "Borrar todos los registros"). */
 export const RECORD_TYPES = ['bottles', 'poops'];
 
@@ -84,7 +84,7 @@ export class CloudAdapter {
   constructor(db) {
     this.db = db;
     this.where = new Map(); // id -> mes donde está guardado
-    this.cache = { bottles: [], poops: [], album: [] };
+    this.cache = { bottles: [], poops: [], album: [], citas: [] };
   }
   async open() {
     this.ingest((await this.db.collection('months').get()).docs);
@@ -93,11 +93,11 @@ export class CloudAdapter {
   /** El álbum va aparte: un documento por mes del bebé (las fotos no caben juntas). */
   ingestAlbum(docs) { this.cache.album = docs.map((d) => d.data()).filter(Boolean); }
   ingest(docs) {
-    const out = { bottles: [], poops: [], album: this.cache.album || [] };
+    const out = { bottles: [], poops: [], citas: [], album: this.cache.album || [] };
     this.where.clear();
     for (const d of docs) {
       const body = d.data() || {};
-      for (const t of RECORD_TYPES) {
+      for (const t of [...RECORD_TYPES, 'citas']) {
         for (const [id, r] of Object.entries(body[t] || {})) {
           if (r) { out[t].push(r); this.where.set(id, d.id); }
         }
@@ -116,7 +116,7 @@ export class CloudAdapter {
       if (e?.code !== 'invalid_argument') throw e;
       const snap = await ref.get();
       if (snap.exists) throw e;
-      await ref.set({ bottles: {}, poops: {}, [type]: patch });
+      await ref.set({ bottles: {}, poops: {}, citas: {}, [type]: patch });
     }
   }
   async put(type, rec) {
@@ -155,7 +155,7 @@ export class CloudAdapter {
     for (const d of snap.docs) {
       const body = { ...(d.data() || {}) };
       body[type] = {};
-      if (!Object.values(body.bottles || {}).some(Boolean) && !Object.values(body.poops || {}).some(Boolean)) await this.db.doc(`months/${d.id}`).delete();
+      if (!Object.values(body.bottles || {}).some(Boolean) && !Object.values(body.poops || {}).some(Boolean) && !Object.values(body.citas || {}).some(Boolean)) await this.db.doc(`months/${d.id}`).delete();
       else await this.db.doc(`months/${d.id}`).set(body);
     }
   }
@@ -187,7 +187,7 @@ export function uuid() {
 
 class Store {
   constructor() {
-    this.data = { bottles: [], poops: [], album: [] };
+    this.data = { bottles: [], poops: [], album: [], citas: [] };
     this.settings = { ...DEFAULT_SETTINGS };
     this.listeners = new Set();
     this.backend = 'none';

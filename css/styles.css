@@ -360,9 +360,9 @@ button { cursor: pointer; background: none; border: 0; padding: 0; }
   -webkit-backdrop-filter: saturate(1.4) blur(18px); backdrop-filter: saturate(1.4) blur(18px);
   border-top: 1px solid var(--line);
 }
-.tabbar-inner { max-width: 540px; margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr); }
+.tabbar-inner { max-width: 540px; margin: 0 auto; display: grid; grid-template-columns: repeat(6, 1fr); }
 .tab { text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 3px; min-height: 50px; color: var(--muted); font-size: .7rem; letter-spacing: .02em; }
-.tab-ico { width: 50px; height: 32px; border-radius: 999px; display: grid; place-items: center; transition: background .25s, color .25s; }
+.tab-ico { width: 42px; height: 32px; border-radius: 999px; display: grid; place-items: center; transition: background .25s, color .25s; }
 .tab.on { color: var(--ink); font-weight: 500; }
 .tab.on .tab-ico { background: var(--blue-wash); color: var(--accent-ink); }
 
@@ -459,7 +459,7 @@ textarea.notes:focus { border-color: var(--blue-deep); }
 .dialog { position: relative; background: var(--bg); border-radius: 26px; padding: 26px 22px 18px; width: 100%; max-width: 340px; text-align: center; box-shadow: var(--shadow-lift); animation: pop .28s cubic-bezier(.2, .9, .25, 1.2) both; }
 @keyframes pop { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
 .dialog h3 { font-family: var(--serif); font-weight: 500; font-size: 1.5rem; margin: 0 0 8px; }
-.dialog p { margin: 0 0 18px; color: var(--ink-soft); font-size: .92rem; }
+.dialog p { margin: 0 0 18px; color: var(--ink-soft); font-size: .92rem; white-space: pre-line; text-align: left; }
 .dialog .btn { width: 100%; margin-top: 8px; }
 .btn-danger-fill { background: var(--danger); color: #fff; }
 
@@ -639,3 +639,30 @@ button, .chip, .quick button, .cons-opt, .step, label.btn { touch-action: manipu
 /* Botón de WhatsApp (verde suave, dentro de la paleta) */
 .btn-whatsapp { background: #CFE3D2; color: #24452D; text-decoration: none; }
 .btn-whatsapp:active { background: #BCD8C1; }
+
+/* ---------- Medicina ---------- */
+.tab { font-size: .62rem; letter-spacing: 0; }
+.cita-row { width: 100%; display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; padding: 12px 2px; border-bottom: 1px solid var(--line); text-align: left; }
+.list li:last-child .cita-row { border-bottom: 0; }
+.cita-date { width: 52px; border-radius: 14px; background: var(--blue-wash); display: flex; flex-direction: column; align-items: center; padding: 6px 0 5px; }
+.cita-row.especialista .cita-date { background: var(--terra-wash); }
+.cita-day { font-family: var(--serif); font-size: 1.6rem; font-weight: 600; line-height: 1; font-variant-numeric: lining-nums; }
+.cita-month { font-size: .66rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-top: 2px; }
+.cita-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cita-title { font-weight: 600; overflow-wrap: anywhere; }
+.cita-meta { font-size: .84rem; color: var(--ink-soft); }
+.cita-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.cita-tags .pill { padding: 3px 10px; font-size: .74rem; }
+.cita-tags .pill svg { width: 14px; height: 14px; }
+.cita-row.done { opacity: .6; }
+.cita-row.done .cita-title { text-decoration: line-through; text-decoration-thickness: 1px; }
+.kinds { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.kind-opt { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 4px; border-radius: 16px; border: 1.5px solid var(--line); background: var(--surface); font-size: .84rem; color: var(--ink-soft); min-height: 74px; }
+.kind-opt.on { border-color: var(--blue-deep); background: var(--blue-wash); color: var(--ink); font-weight: 600; }
+.segmented button[data-sec].on { background: var(--surface); color: var(--ink); font-weight: 500; box-shadow: var(--shadow); }
+.specialist-card { display: flex; align-items: center; gap: 14px; padding: 14px 16px; }
+.specialist-name { font-family: var(--serif); font-size: 1.4rem; font-weight: 500; }
+.empty-cita { display: flex; align-items: center; gap: 14px; }
+.next-cita { width: 100%; display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; text-align: left; padding: 16px 18px; margin-bottom: 14px; }
+.next-cita-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.next-cita-title { font-family: var(--serif); font-size: 1.3rem; font-weight: 500; line-height: 1.15; overflow-wrap: anywhere; }

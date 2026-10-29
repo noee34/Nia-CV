@@ -36,7 +36,7 @@ export function toCSV(bottles, poops) {
   return '﻿' + [header.join(';'), ...rows].join('\r\n');
 }
 
-export function toBackup({ bottles, poops, album = [], settings }) {
+export function toBackup({ bottles, poops, album = [], citas = [], settings }) {
   return {
     format: BACKUP_FORMAT,
     version: BACKUP_VERSION,
@@ -45,6 +45,7 @@ export function toBackup({ bottles, poops, album = [], settings }) {
     bottles,
     poops,
     album,
+    citas,
   };
 }
 
@@ -57,7 +58,8 @@ export function parseBackup(text) {
   const okBottle = (r) => r && typeof r.id === 'string' && Number.isFinite(r.at) && Number.isFinite(r.prepared) && Number.isFinite(r.taken);
   const okPoop = (r) => r && typeof r.id === 'string' && Number.isFinite(r.at) && CONSISTENCIES[r.consistency];
   const okAlbum = (r) => r && typeof r.id === 'string' && Number.isInteger(r.month) && r.month >= 0 && r.month <= 12;
-  return { ...data, bottles: data.bottles.filter(okBottle), poops: data.poops.filter(okPoop), album: (data.album || []).filter(okAlbum) };
+  const okCita = (r) => r && typeof r.id === 'string' && Number.isFinite(r.at) && typeof r.kind === 'string';
+  return { ...data, bottles: data.bottles.filter(okBottle), poops: data.poops.filter(okPoop), album: (data.album || []).filter(okAlbum), citas: (data.citas || []).filter(okCita) };
 }
 
 /** Fusiona por id; si existe en ambos lados gana el `updatedAt` más reciente. */

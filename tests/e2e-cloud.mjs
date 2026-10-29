@@ -13,7 +13,7 @@ await mkdir(shots, { recursive: true });
 
 /* ---------- Servidor simulado (auth + tablas con "RLS") ---------- */
 const users = new Map(); // email -> { id, password }
-const tables = { biberones: [], deposiciones: [], ajustes: [], album: [] };
+const tables = { biberones: [], deposiciones: [], ajustes: [], album: [], citas: [] };
 const pages = new Set();
 const members = new Map(); // miembro -> propietario (solo miembros activos; salir/quitar = inactivo)
 const invites = new Map(); // código -> { owner, expires, usedBy }
@@ -195,7 +195,7 @@ await pb.locator('#auth form').waitFor();
 await pb.fill('#auth-email', 'familia@example.com');
 await pb.fill('#auth-password', 'NiaCuidados2026');
 await pb.getByRole('button', { name: 'Entrar' }).tap();
-await waitText(pb, '#view-hoy .card', /120 ml registrados/);
+await waitText(pb, '#view-hoy article.card', /120 ml registrados/);
 step('Otro dispositivo entra con el mismo usuario y ve el biberón');
 
 await pb.getByRole('button', { name: 'Registrar caca' }).tap();
@@ -211,7 +211,7 @@ await pa.locator('[data-quick="90"]').tap();
 await pa.getByRole('button', { name: 'Guardar biberón' }).tap();
 await waitText(pa, '.sync-pill', /Sin conexión · 1 por subir/);
 assert.equal(tables.biberones.length, 1, 'todavía no ha llegado a la nube');
-assert.match(await pa.locator('#view-hoy .card').first().innerText(), /210 ml registrados/);
+assert.match(await pa.locator('#view-hoy article.card').first().innerText(), /210 ml registrados/);
 await pa.screenshot({ path: `${shots}/cuenta-04-sin-conexion.png` });
 step('Sin conexión: se ve al momento y queda pendiente de subir');
 
@@ -221,21 +221,21 @@ await A.ctx.setOffline(false);
 await pa.reload();
 await pa.locator('.h-display').waitFor();
 await waitText(pa, '.sync-pill', /1 por subir/);
-assert.match(await pa.locator('#view-hoy .card').first().innerText(), /210 ml registrados/);
+assert.match(await pa.locator('#view-hoy article.card').first().innerText(), /210 ml registrados/);
 assert.equal(tables.biberones.length, 1);
 step('Tras cerrar y abrir la app, lo pendiente sigue guardado en el dispositivo');
 serverDown = false;
 await pa.evaluate(() => dispatchEvent(new Event('online')));
 await waitText(pa, '.sync-pill', /En la nube/);
 assert.equal(tables.biberones.length, 2);
-await waitText(pb, '#view-hoy .card', /210 ml registrados/);
+await waitText(pb, '#view-hoy article.card', /210 ml registrados/);
 step('Al volver la conexión se sube solo y llega al otro dispositivo');
 
 // Editar en un dispositivo, borrar en otro
 await pb.locator('.timeline [data-edit="bottles"]').first().tap();
 await pb.getByRole('button', { name: 'Eliminar biberón' }).tap();
 await pb.locator('.dialog').getByRole('button', { name: 'Eliminar' }).tap();
-await waitText(pa, '#view-hoy .card', /1\s*toma/);
+await waitText(pa, '#view-hoy article.card', /1\s*toma/);
 assert.equal(tables.biberones.length, 1);
 step('Un borrado en la tablet desaparece también del móvil');
 
@@ -304,7 +304,7 @@ assert.equal(await pc.locator('input[name="remember"]').isChecked(), true, '“M
 await pc.screenshot({ path: `${shots}/cuenta-07-pareja.png` });
 await pc.getByRole('button', { name: 'Crear cuenta' }).tap();
 await waitText(pc, '.h-display', /Nia Carmen, hoy/);
-await waitText(pc, '#view-hoy .card', /1\s*toma/);
+await waitText(pc, '#view-hoy article.card', /1\s*toma/);
 step('La pareja toca el enlace, ve “Te han invitado” con el código puesto, crea su cuenta y ve el mismo diario');
 
 await pc.getByRole('button', { name: 'Registrar caca' }).tap();
@@ -314,6 +314,18 @@ await waitText(pa, '#view-hoy', /2\s*deposiciones hoy/);
 const lastPoop = tables.deposiciones.at(-1);
 assert.equal(lastPoop.usuario_id, 'u-1', 'lo apuntado por la pareja va al diario de la propietaria');
 step('Lo que apunta la pareja llega en vivo al móvil de la propietaria');
+
+// Citas médicas compartidas
+await pa.evaluate(async () => {
+  const { store } = await import('/js/store.js');
+  await store.save('citas', { at: Date.now() + 2 * 86400000, section: 'especialista', kind: 'especialista', title: 'Seguimiento', doctor: 'Angela', place: '', notes: '', reminders: [1440], done: false });
+});
+await pc.waitForFunction(async () => (await import('/js/store.js')).store.all('citas').length === 1, null, { timeout: 8000 });
+assert.equal(tables.citas.length, 1);
+assert.equal(tables.citas[0].usuario_id, 'u-1');
+assert.equal(tables.citas[0].profesional, 'Angela');
+assert.deepEqual(tables.citas[0].avisos, [1440]);
+step('Las citas médicas se guardan en la nube y la pareja las ve');
 
 await pa.getByRole('button', { name: 'Ajustes' }).tap();
 await waitText(pa, '.sheet', /pareja@example\.com/);
@@ -339,7 +351,7 @@ await pd.fill('#auth-repeat', 'Curioso2026!');
 await pd.fill('#auth-invite', code);
 await pd.getByRole('button', { name: 'Crear cuenta' }).tap();
 await pd.locator('.toast').filter({ hasText: /no es válido o ha caducado/ }).waitFor();
-await waitText(pd, '#view-hoy .card', /0\s*tomas/);
+await waitText(pd, '#view-hoy article.card', /0\s*tomas/);
 step('Un código ya usado no da acceso (esa cuenta ve solo su diario vacío)');
 
 // Mantener la sesión iniciada: con la casilla, al cerrar y abrir la app sigue dentro
@@ -358,7 +370,7 @@ await pd.fill('#auth-email', 'curioso@example.com');
 await pd.fill('#auth-password', 'Curioso2026!');
 await pd.locator('input[name="remember"]').uncheck();
 await pd.getByRole('button', { name: 'Entrar' }).tap();
-await waitText(pd, '#view-hoy .card', /0\s*tomas/);
+await waitText(pd, '#view-hoy article.card', /0\s*tomas/);
 const pd2 = await D.ctx.newPage(); // abrir la app de nuevo (sesión temporal borrada)
 pages.add(pd2);
 await pd2.goto(URL);
@@ -374,7 +386,7 @@ await pa.locator('.toast').filter({ hasText: 'Acceso quitado' }).waitFor();
 await pa.getByRole('button', { name: 'Cerrar' }).first().tap();
 await pa.locator('.sheet-root').waitFor({ state: 'detached' });
 await pc.reload();
-await waitText(pc, '#view-hoy .card', /0\s*tomas/);
+await waitText(pc, '#view-hoy article.card', /0\s*tomas/);
 step('Al quitarle el acceso, la pareja deja de ver el diario');
 
 // Cerrar sesión
@@ -391,12 +403,12 @@ await pb.fill('#auth-email', 'otra@example.com');
 await pb.fill('#auth-password', 'OtraFamilia2026');
 await pb.fill('#auth-repeat', 'OtraFamilia2026');
 await pb.getByRole('button', { name: 'Crear cuenta' }).tap();
-await waitText(pb, '#view-hoy .card', /0\s*tomas/);
+await waitText(pb, '#view-hoy article.card', /0\s*tomas/);
 step('Otra cuenta no ve los datos de la primera');
 
 // La sesión se recuerda
 await pa.reload();
-await waitText(pa, '#view-hoy .card', /1\s*toma/);
+await waitText(pa, '#view-hoy article.card', /1\s*toma/);
 step('Al volver a abrir, la sesión sigue iniciada');
 
 assert.deepEqual(errors, [], errors.join('\n'));

@@ -6,7 +6,7 @@ import { SyncedAdapter } from '../js/sync.js';
 import { MemoryAdapter } from '../js/store.js';
 
 function fakeCloud() {
-  const tables = { bottles: new Map(), poops: new Map(), album: new Map() };
+  const tables = { bottles: new Map(), poops: new Map(), album: new Map(), citas: new Map() };
   let settings = null;
   const cloud = {
     online: true,
