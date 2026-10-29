@@ -1,6 +1,7 @@
 // Pantalla CACAS: calendario mensual, detalle del día e historial filtrable.
 import { store } from '../store.js';
 import { icons } from '../art.js';
+import { diaperScene } from '../characters.js';
 import { calendarHTML } from '../ui.js';
 import { dayKey, fmtLongDate, relativeDayLabel, cap } from '../dates.js';
 import { groupByDay, CONSISTENCIES, byTimeDesc } from '../stats.js';
@@ -28,7 +29,8 @@ export function renderPoops(state) {
   <header class="topbar">
     <h1 class="h-section" style="font-size:2rem">Cacas</h1>
   </header>
-  <p class="subtle" style="margin:-4px 0 16px">Toca un día para ver sus registros.</p>
+  <div class="scene-banner small">${diaperScene()}</div>
+  <p class="subtle" style="margin:0 0 14px">Toca un día del calendario para ver sus registros.</p>
 
   ${calendarHTML({ year: y, month: m, selected: sel, marks, mode: 'poops', id: 'pcal' })}
 

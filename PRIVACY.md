@@ -10,6 +10,7 @@ para que tus datos sean sólo tuyos.
 - Los registros que introduces: fecha y hora, cantidades de leche, consistencia de las
   deposiciones y observaciones opcionales.
 - Tus preferencias (cantidades rápidas, referencia de próximo biberón).
+- Si la eliges, una foto de cabecera, reducida en el propio dispositivo antes de guardarla.
 
 No se piden fechas de nacimiento, datos de salud adicionales, ubicación, contactos, fotos ni
 ningún dato de identificación de la familia.

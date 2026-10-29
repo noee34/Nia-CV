@@ -1,5 +1,6 @@
 // Piezas compartidas por varias pantallas.
-import { icons, consistencyIcon, sleepyIllustration } from '../art.js';
+import { icons, consistencyIcon } from '../art.js';
+import { sleepingScene } from '../characters.js';
 import { esc } from '../ui.js';
 import { fmtTime } from '../dates.js';
 import { CONSISTENCIES } from '../stats.js';
@@ -41,7 +42,7 @@ export function poopRow(p) {
 }
 
 export function emptyState(title, sub = '', size = 120) {
-  return `<div class="empty">${sleepyIllustration(size)}<div class="empty-title">${esc(title)}</div>${sub ? `<div class="empty-sub">${esc(sub)}</div>` : ''}</div>`;
+  return `<div class="empty">${sleepingScene(size + 20)}<div class="empty-title">${esc(title)}</div>${sub ? `<div class="empty-sub">${esc(sub)}</div>` : ''}</div>`;
 }
 
 export const summaryCell = (num, unit, label) =>

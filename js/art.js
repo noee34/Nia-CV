@@ -1,5 +1,5 @@
 // Iconografía e ilustraciones originales de Nia CV (SVG en línea).
-// El cachorro "Nube" es un diseño propio: no reproduce ningún personaje existente.
+// Los personajes (Nube, Canela, Mamá y Papá) están en characters.js.
 
 const C = {
   blue: '#B8D7E8', blueDeep: '#8EAFC0', cream: '#FFFDF9', ivory: '#F7F3ED',
@@ -62,68 +62,3 @@ export const paw = (size = 14, color = C.sage) =>
 /** Logotipo tipográfico: "Nia" en serif cursiva + "CV" en versalitas, con una estrellita. */
 export const logo = (cls = '') =>
   `<span class="logo ${cls}" aria-label="Nia CV" role="img"><span class="logo-nia">Nia</span><span class="logo-star">${smallStar(9)}</span><span class="logo-cv">CV</span></span>`;
-
-/** Cabeza del cachorro Nube (ojos cerrados y sonrisa tranquila). */
-function puppyHead({ x = 0, y = 0, s = 1, sleepy = true } = {}) {
-  const eyes = sleepy
-    ? `<path d="M44 61q5-4.5 10 0M66 61q5-4.5 10 0" stroke="${C.ink}" stroke-width="2.2" fill="none" stroke-linecap="round"/>`
-    : `<circle cx="49" cy="60" r="3.2" fill="${C.ink}"/><circle cx="71" cy="60" r="3.2" fill="${C.ink}"/><circle cx="50" cy="59" r="1" fill="#fff"/><circle cx="72" cy="59" r="1" fill="#fff"/>`;
-  return `<g transform="translate(${x} ${y}) scale(${s})">
-    <path d="M36 50C27 40 21 26 23.5 15.5c.8-3.4 4-4.4 6.6-2.2C38 20 47 29 53 38Z" fill="${C.blueDeep}"/>
-    <path d="M84 50c9-10 15-24 12.5-34.5-.8-3.4-4-4.4-6.6-2.2C82 20 73 29 67 38Z" fill="${C.blueDeep}"/>
-    <path d="M39 42.5c-3-5-4.6-10.6-4.4-15 3.4 3 6.8 6.6 9.6 10.2Z" fill="${C.sand}" opacity=".85"/>
-    <path d="M81 42.5c3-5 4.6-10.6 4.4-15-3.4 3-6.8 6.6-9.6 10.2Z" fill="${C.sand}" opacity=".85"/>
-    <ellipse cx="60" cy="62" rx="35" ry="30" fill="${C.blue}"/>
-    <ellipse cx="72.5" cy="58.5" rx="10.5" ry="9.5" fill="${C.blueDeep}" opacity=".55"/>
-    <path d="M60 34c-3 3-4 8.5-2.4 13 .8 2 4 2 4.8 0C64 42.5 63 37 60 34Z" fill="${C.blueDeep}" opacity=".75"/>
-    <ellipse cx="60" cy="76" rx="20" ry="14" fill="${C.cream}"/>
-    ${eyes}
-    <path d="M53.5 68.2c4.2-2.4 8.8-2.4 13 0 .9.6.8 1.9-.1 2.6L61.4 74a2.4 2.4 0 0 1-2.8 0l-5-3.2c-.9-.7-1-2-.1-2.6Z" fill="#6F625A"/>
-    <path d="M60 74.5q-3.6 4.4-7.6 1.8M60 74.5q3.6 4.4 7.6 1.8" stroke="#6F625A" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-    <path d="M57 77.6q3 6.6 6 0" fill="#E2A28E"/>
-    <ellipse cx="39" cy="73" rx="5" ry="3.6" fill="#EDB9A6" opacity=".75"/>
-    <ellipse cx="81" cy="73" rx="5" ry="3.6" fill="#EDB9A6" opacity=".75"/>
-  </g>`;
-}
-
-const cloud = (x, y, s = 1, fill = C.cream) =>
-  `<path transform="translate(${x} ${y}) scale(${s})" d="M10 40a14 14 0 0 1 4-27.4A20 20 0 0 1 52 8a16 16 0 0 1 26 12 12 12 0 0 1-2 20Z" fill="${fill}"/>`;
-
-/** Cabecera: Nube asomándose tras una nube, con estrellas. */
-export const heroIllustration = () => `
-<svg class="hero-art" viewBox="0 0 220 120" role="img" aria-label="Ilustración: un cachorro azul se asoma tras una nube">
-  <circle cx="150" cy="58" r="50" fill="${C.sand}" opacity=".55"/>
-  <g opacity=".9">${smallStarPath(36, 26, 1.1)}${smallStarPath(196, 18, .8)}${smallStarPath(204, 78, .6)}${smallStarPath(22, 70, .55, C.sage)}</g>
-  ${puppyHead({ x: 98, y: 4, s: .86 })}
-  ${cloud(70, 74, 1.55)}
-  ${cloud(146, 86, .9, C.ivory)}
-</svg>`;
-
-function smallStarPath(x, y, s = 1, color = C.terra) {
-  return `<path transform="translate(${x} ${y}) scale(${s})" d="M0-7 1.7-1.7 7 0 1.7 1.7 0 7-1.7 1.7-7 0-1.7-1.7Z" fill="${color}"/>`;
-}
-
-/** Estados vacíos: Nube dormido sobre una luna creciente. */
-export const sleepyIllustration = (size = 120) => `
-<svg width="${size}" height="${size * .72}" viewBox="0 0 170 122" aria-hidden="true">
-  <path d="M140 18a34 34 0 1 0 22 50 28 28 0 1 1-22-50Z" fill="${C.sand}"/>
-  ${smallStarPath(20, 20, .9)}${smallStarPath(160, 100, .6, C.sage)}${smallStarPath(36, 96, .5)}
-  ${puppyHead({ x: 28, y: 6, s: .78 })}
-  <text x="120" y="40" font-family="Cormorant Garamond, Georgia, serif" font-style="italic" font-size="16" fill="${C.blueDeep}">z</text>
-  <text x="130" y="28" font-family="Cormorant Garamond, Georgia, serif" font-style="italic" font-size="12" fill="${C.blueDeep}">z</text>
-  ${cloud(18, 80, 1.7)}
-</svg>`;
-
-/** Mini escena para la cabecera del biberón y las cacas. */
-export const miniPuppy = (size = 46) =>
-  `<svg width="${size}" height="${size}" viewBox="0 0 120 110" aria-hidden="true">${puppyHead({ sleepy: false })}</svg>`;
-
-/** Icono de app (también usado para generar los PNG). */
-export const appIconSVG = () => `
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="${C.ivory}"/>
-  <circle cx="256" cy="262" r="176" fill="${C.sand}" opacity=".6"/>
-  <g transform="translate(70 70) scale(3.1)">${puppyHead({})}</g>
-  <g transform="translate(400 120) scale(3)">${smallStarPath(0, 0, 1)}</g>
-  <g transform="translate(112 404) scale(2)">${smallStarPath(0, 0, 1, C.sage)}</g>
-</svg>`;

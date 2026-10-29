@@ -1,5 +1,6 @@
 // Pantalla de acceso: entrar, crear cuenta, recuperar y cambiar la contraseña.
-import { logo, heroIllustration, icons, paw, smallStar } from './art.js';
+import { logo, icons, paw, smallStar } from './art.js';
+import { familyScene } from './characters.js';
 import { esc, $ } from './ui.js';
 
 const MIN_PASSWORD = 8;
@@ -43,7 +44,7 @@ export function showAuth(root, client, { mode = 'login', onSession, notice = '' 
   root.innerHTML = `
   <div class="auth">
     <div class="auth-brand">${logo('lg')}</div>
-    ${heroIllustration()}
+    <div class="scene-banner">${familyScene({ wave: true })}</div>
     <h1 class="h-display" style="font-size:2.1rem">${title}</h1>
     <p class="subtle auth-sub">${sub}</p>
     <form class="auth-form" novalidate>

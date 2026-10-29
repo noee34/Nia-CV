@@ -190,9 +190,21 @@ con Xcode y una cuenta de Apple Developer:
 
 ## 6. Ilustraciones y marca
 
-El cachorro azul (“Nube”), las estrellas, nubes y huellitas son **dibujos originales** creados
-para Nia CV en SVG. No se usan logotipos, personajes ni ilustraciones de Bluey ni de ninguna
-otra marca. Las fuentes son de uso libre (SIL OFL, licencias en `fonts/`).
+La app tiene su propia familia de personajes, dibujados en SVG en `js/characters.js`:
+
+| Personaje | Cómo es | Dónde aparece |
+|---|---|---|
+| **Nube** | Cachorro azul pastel, orejitas dobladas, huellita en el pecho | Hoy, Biberones, tarjeta de biberones, estados vacíos |
+| **Canela** | Cachorrita melocotón, orejas largas caídas, lazo azul | Hoy, Cacas, tarjeta de pañales |
+| **Mamá** | Color avena, orejas caídas y una flor | Diario y pantalla de acceso |
+| **Papá** | Verde salvia, orejas redondas y bufanda | Diario y pantalla de acceso |
+
+Son **diseños originales** de Nia CV: no se usan logotipos, personajes ni ilustraciones de
+ninguna serie. Las fuentes son de uso libre (SIL OFL, licencias en `fonts/`).
+
+**Foto de cabecera:** en *Ajustes → Personal → Foto* se puede elegir una foto del bebé, que
+sustituye al jardín en la pantalla Hoy (marco en arco con Nube y Canela asomándose). Se
+reduce en el dispositivo (`js/photo.js`) antes de guardarla con los ajustes.
 
 ## 7. Privacidad
 Ver [`PRIVACY.md`](PRIVACY.md). En resumen: sin cuentas, sin servidores, sin analíticas;

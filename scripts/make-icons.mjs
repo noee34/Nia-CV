@@ -3,9 +3,9 @@
 import { createRequire } from 'node:module';
 const { chromium } = createRequire(import.meta.url)('playwright');
 import { writeFile } from 'node:fs/promises';
-import { appIconSVG } from '../js/art.js';
+import { appIcon } from '../js/characters.js';
 
-const svg = appIconSVG();
+const svg = appIcon();
 await writeFile(new URL('../icons/icon.svg', import.meta.url), svg);
 const browser = await chromium.launch();
 const page = await browser.newPage();

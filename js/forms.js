@@ -1,6 +1,7 @@
 // Formularios de registro: biberón y deposición (crear, editar, eliminar).
 import { store } from './store.js';
-import { icons, consistencyIcon, miniPuppy } from './art.js';
+import { icons, consistencyIcon } from './art.js';
+import { headIcon } from './characters.js';
 import { openSheet, confirmDialog, toast, esc, $, $$ } from './ui.js';
 import { combineLocal, toDateInput, toTimeInput, dayKey } from './dates.js';
 import { validateBottle, validatePoop, CONSISTENCIES } from './stats.js';
@@ -98,7 +99,7 @@ export function openBottleForm({ record = null, forDay = null } = {}) {
     render(body, close) {
       body.innerHTML = `<form novalidate autocomplete="off">
         <div class="sheet-head">
-          <div class="sheet-title">${miniPuppy(40)}<h2 class="h-section">${editing ? 'Editar biberón' : 'Nuevo biberón'}</h2></div>
+          <div class="sheet-title">${headIcon('nube', 44)}<h2 class="h-section">${editing ? 'Editar biberón' : 'Nuevo biberón'}</h2></div>
           <button type="button" class="icon-btn" data-close aria-label="Cerrar">${icons.close()}</button>
         </div>
 
@@ -223,7 +224,7 @@ export function openPoopForm({ record = null, forDay = null } = {}) {
     render(body, close) {
       body.innerHTML = `<form novalidate autocomplete="off">
         <div class="sheet-head">
-          <div class="sheet-title">${miniPuppy(40)}<h2 class="h-section">${editing ? 'Editar deposición' : 'Registrar caca'}</h2></div>
+          <div class="sheet-title">${headIcon('canela', 44)}<h2 class="h-section">${editing ? 'Editar deposición' : 'Registrar caca'}</h2></div>
           <button type="button" class="icon-btn" data-close aria-label="Cerrar">${icons.close()}</button>
         </div>
 

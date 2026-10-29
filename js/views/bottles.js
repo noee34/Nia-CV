@@ -1,6 +1,7 @@
 // Pantalla BIBERONES: vista diaria navegable + resumen del día.
 import { store } from '../store.js';
 import { icons } from '../art.js';
+import { bottleScene } from '../characters.js';
 import { dayKey, fmtLongDate, relativeDayLabel, parseDayKey } from '../dates.js';
 import { onDay, bottleSummary, groupByDay } from '../stats.js';
 import { calendarHTML } from '../ui.js';
@@ -18,6 +19,8 @@ export function renderBottles(state) {
     <h1 class="h-section" style="font-size:2rem">Biberones</h1>
     <button class="icon-btn" data-action="bottle-calendar" aria-label="Elegir día en el calendario">${icons.calendar()}</button>
   </header>
+
+  <div class="scene-banner small">${bottleScene()}</div>
 
   <nav class="daynav" aria-label="Cambiar de día">
     <button class="icon-btn" data-day-step="-1" aria-label="Día anterior">${icons.left()}</button>

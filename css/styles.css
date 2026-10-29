@@ -31,6 +31,8 @@
   --line: rgba(138, 123, 112, .16);
   --line-strong: rgba(138, 123, 112, .3);
   --blue-wash: #E3EEF4;
+  --sky: #E6F0F5;
+  --sky-top: #F1F6F8;
   --terra-wash: #F4E2DA;
   --sage-wash: #E7EBE2;
   --accent-ink: #4E6B7A;
@@ -64,6 +66,8 @@
     --line: rgba(232, 222, 209, .1);
     --line-strong: rgba(232, 222, 209, .2);
     --blue-wash: #2B3740;
+    --sky: #2E3B44;
+    --sky-top: #25303A;
     --terra-wash: #3D2D27;
     --sage-wash: #2E332B;
     --accent-ink: #B8D7E8;
@@ -85,6 +89,8 @@
     --line: rgba(232, 222, 209, .1);
     --line-strong: rgba(232, 222, 209, .2);
     --blue-wash: #2B3740;
+    --sky: #2E3B44;
+    --sky-top: #25303A;
     --terra-wash: #3D2D27;
     --sage-wash: #2E332B;
     --accent-ink: #B8D7E8;
@@ -157,7 +163,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; }
 .date-line::first-letter { text-transform: uppercase; }
 
 /* ---------- Hero (Hoy) ---------- */
-.hero { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 8px; margin: 14px 0 22px; }
+.hero { margin: 14px 0 16px; }
 .hero-art { width: 150px; height: auto; margin-right: -10px; }
 .tagline { font-family: var(--serif); font-style: italic; font-size: 1.12rem; color: var(--ink-soft); margin-top: 4px; }
 
@@ -544,3 +550,36 @@ textarea.notes:focus { border-color: var(--blue-deep); }
 .sync-pill.warn i { background: var(--terra); }
 @keyframes pulse { from { opacity: .35; } to { opacity: 1; } }
 @media (max-width: 360px) { .sync-pill { padding: 0 9px; } }
+
+/* ---------- Escenas de la familia (Nube, Canela, Mamá y Papá) ---------- */
+.scene-banner {
+  border-radius: var(--r-card); overflow: hidden; margin: 4px 0 22px;
+  background: linear-gradient(180deg, var(--sky-top), var(--sky));
+  border: 1px solid var(--line);
+}
+.scene-banner .scene { display: block; width: 100%; height: auto; }
+.scene-banner.small { margin: 0 0 16px; }
+.scene-banner.small .scene { max-height: 170px; }
+.auth .scene-banner { margin: 10px 0 18px; }
+
+.card-badge.pup { width: 52px; height: 52px; border-radius: 18px; overflow: hidden; }
+.card-badge.pup svg { width: 46px; height: 46px; margin-top: 4px; }
+
+/* Foto del bebé en un marco en arco, con los cachorros asomándose */
+.photo-frame { position: relative; width: min(74%, 270px); margin: 22px auto 34px; }
+.photo-frame img {
+  display: block; width: 100%; aspect-ratio: 5 / 6; object-fit: cover;
+  border-radius: 999px 999px var(--r-card) var(--r-card);
+  border: 6px solid var(--surface); box-shadow: var(--shadow-lift);
+  background: var(--surface-2);
+}
+.photo-pup { position: absolute; width: 84px; bottom: -22px; filter: drop-shadow(0 4px 8px rgba(60, 45, 35, .18)); }
+.photo-pup.left { left: -46px; transform: rotate(-10deg); }
+.photo-pup.right { right: -46px; transform: rotate(10deg); }
+.photo-deco { position: absolute; left: 50%; top: -20px; width: 96px; transform: translateX(-50%); }
+@media (max-width: 380px) { .photo-pup { width: 72px; } .photo-pup.left { left: -36px; } .photo-pup.right { right: -36px; } }
+
+/* Ajustes: foto */
+.photo-thumb { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex: none; border: 2px solid var(--surface); box-shadow: var(--shadow); }
+.photo-actions { display: flex; gap: 8px; padding: 0 16px 14px; flex-wrap: wrap; }
+.photo-actions .btn { min-height: 40px; }

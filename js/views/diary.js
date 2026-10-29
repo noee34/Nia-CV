@@ -2,6 +2,7 @@
 // Sólo muestra datos registrados; no interpreta ni diagnostica.
 import { store } from '../store.js';
 import { icons } from '../art.js';
+import { familyScene } from '../characters.js';
 import { calendarHTML } from '../ui.js';
 import { dayKey, addDays, fmtShortDate, weekdayShort, fmtLongDate, cap, parseDayKey } from '../dates.js';
 import { weekRows, groupByDay, onDay, bottleSummary } from '../stats.js';
@@ -11,7 +12,8 @@ export function renderDiary(state) {
   const mode = state.diaryMode;
   return `
   <header class="topbar"><h1 class="h-section" style="font-size:2rem">Diario</h1></header>
-  <p class="subtle" style="margin:-4px 0 16px">La evolución de los pequeños días.</p>
+  <div class="scene-banner small">${familyScene()}</div>
+  <p class="subtle" style="margin:0 0 14px">La evolución de los pequeños días.</p>
   <div class="segmented" role="tablist" aria-label="Vista">
     <button role="tab" aria-selected="${mode === 'week'}" class="${mode === 'week' ? 'on' : ''}" data-diary-mode="week">Semana</button>
     <button role="tab" aria-selected="${mode === 'month'}" class="${mode === 'month' ? 'on' : ''}" data-diary-mode="month">Mes</button>
