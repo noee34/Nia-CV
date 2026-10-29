@@ -1,6 +1,6 @@
 // Service worker: guarda la app en caché para abrirla y usarla sin conexión.
 // Los REGISTROS no pasan por aquí: viven en IndexedDB en el dispositivo.
-const VERSION = 'nia-cv-v1.5.0';
+const VERSION = 'nia-cv-v1.5.1';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest', './css/styles.css',
   './js/app.js', './js/store.js', './js/dates.js', './js/stats.js', './js/ui.js', './js/art.js',

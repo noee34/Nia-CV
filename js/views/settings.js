@@ -9,7 +9,7 @@ import { syncLabel } from './common.js';
 import { THEMES, getTheme, setTheme } from '../theme.js';
 import { pupIcon } from '../characters.js';
 
-export const APP_VERSION = '1.5.0';
+export const APP_VERSION = '1.5.1';
 
 const INTERVALS = [[0, 'Sin referencia'], [120, 'Cada 2 h'], [150, 'Cada 2 h 30'], [180, 'Cada 3 h'], [210, 'Cada 3 h 30'], [240, 'Cada 4 h']];
 

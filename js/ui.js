@@ -41,20 +41,32 @@ export function openSheet({ label, render, onClose }) {
   root.addEventListener('click', (e) => { if (e.target.closest('[data-close]')) close(); });
   root.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
 
-  // Deslizar hacia abajo desde la parte superior para cerrar.
+  // Deslizar hacia abajo para cerrar: SOLO desde la parte de arriba (rayita y
+  // título) y solo con un movimiento claro. Así, al tocar botones del formulario
+  // la ventana no se mueve nada (en el iPhone, mover lo que hay bajo el dedo
+  // durante un toque puede hacer que Safari descarte ese toque).
+  const DRAG_FROM = '.grabber, .sheet-head';
+  const THRESHOLD = 10;
   let startY = null;
-  sheet.addEventListener('touchstart', (e) => { startY = sheet.scrollTop <= 0 ? e.touches[0].clientY : null; }, { passive: true });
+  let dragging = false;
+  sheet.addEventListener('touchstart', (e) => {
+    const handle = e.target.closest(DRAG_FROM) && !e.target.closest('button, input, textarea, select, label');
+    startY = handle && sheet.scrollTop <= 0 ? e.touches[0].clientY : null;
+    dragging = false;
+  }, { passive: true });
   sheet.addEventListener('touchmove', (e) => {
     if (startY == null) return;
     const dy = e.touches[0].clientY - startY;
-    if (dy > 0 && !e.target.closest('input, textarea')) sheet.style.transform = `translateY(${dy * 0.6}px)`;
+    if (!dragging && dy > THRESHOLD) dragging = true;
+    if (dragging) sheet.style.transform = `translateY(${Math.max(0, dy - THRESHOLD) * 0.6}px)`;
   }, { passive: true });
   sheet.addEventListener('touchend', (e) => {
     if (startY == null) return;
     const dy = e.changedTouches[0].clientY - startY;
     sheet.style.transform = '';
     startY = null;
-    if (dy > 120) close();
+    if (dragging && dy > 120) close();
+    dragging = false;
   });
 
   render($('.sheet-body', root), close);

@@ -161,6 +161,12 @@ export function openBottleForm({ record = null, forDay = null } = {}) {
         sync();
       };
 
+      // Elegir cantidad: responde al toque y también al levantar el dedo (doble
+      // seguro para el iPhone; elegir dos veces la misma cantidad no cambia nada).
+      form.addEventListener('pointerup', (e) => {
+        const q = e.target.closest('[data-quick]');
+        if (q && e.pointerType !== 'mouse') setTaken(Number(q.dataset.quick));
+      });
       form.addEventListener('click', (e) => {
         const q = e.target.closest('[data-quick]');
         if (q) setTaken(Number(q.dataset.quick));
@@ -265,6 +271,10 @@ export function openPoopForm({ record = null, forDay = null } = {}) {
         errEl.textContent = '';
       };
 
+      form.addEventListener('pointerup', (e) => {
+        const c = e.target.closest('[data-cons]');
+        if (c && e.pointerType !== 'mouse') { consistency = c.dataset.cons; sync(); }
+      });
       form.addEventListener('click', (e) => {
         const c = e.target.closest('[data-cons]');
         if (c) { consistency = c.dataset.cons; sync(); }

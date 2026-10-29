@@ -619,3 +619,7 @@ textarea.notes:focus { border-color: var(--blue-deep); }
 .input-shell .unit { color: var(--muted); font-size: .9rem; }
 .sheet-title > div { min-width: 0; }
 @media (max-width: 360px) { .album-grid { grid-template-columns: repeat(2, 1fr); } }
+
+/* Toques rápidos en el iPhone: sin zoom por doble toque ni retraso en los botones */
+button, .chip, .quick button, .cons-opt, .step, label.btn { touch-action: manipulation; }
+.grabber { padding: 8px 0; margin-top: -8px; background-clip: content-box; box-sizing: content-box; }
