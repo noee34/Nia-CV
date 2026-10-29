@@ -15,7 +15,7 @@ import { renderToday } from './views/today.js';
 import { renderBottles, bottleCalendarHTML } from './views/bottles.js';
 import { renderPoops } from './views/poops.js';
 import { renderDiary } from './views/diary.js';
-import { openSettings } from './views/settings.js';
+import { openSettings, askJoin } from './views/settings.js';
 import { renderProfile, openProfileForm, openAlbumMonth, setHeaderPhoto, removeHeaderPhoto } from './views/profile.js';
 
 const TABS = {
@@ -234,6 +234,17 @@ function registerSW() {
   }
 }
 
+/* Enlace de invitación (…?codigo=ABC123): se lee una vez y se quita de la dirección. */
+let inviteFromLink = '';
+function readInviteLink() {
+  try {
+    const params = new URLSearchParams(location.search);
+    const code = (params.get('codigo') || '').trim().toUpperCase();
+    if (/^[A-Z0-9]{6}$/.test(code)) inviteFromLink = code;
+    if (params.has('codigo')) history.replaceState(null, '', location.pathname + location.hash);
+  } catch { /* nada */ }
+}
+
 /* Modo cuenta: usuario y contraseña con Supabase, datos en la nube. */
 
 async function bootSupabase() {
@@ -260,7 +271,7 @@ async function bootSupabase() {
   // guardados en local; se subirán en cuanto vuelva la conexión.
   const last = readLastUser();
   if (last && getRemember() && navigator.onLine === false) return enter({ user: last }, { offline: true });
-  showAuth(authRoot, client, { mode: 'login', onSession: enter });
+  showAuth(authRoot, client, { mode: inviteFromLink ? 'signup' : 'login', invite: inviteFromLink, onSession: enter });
 }
 
 async function enter(session, { offline = false } = {}) {
@@ -295,7 +306,13 @@ async function enter(session, { offline = false } = {}) {
   start();
   registerSW();
   if (offline) toast('Sin conexión: lo que registres se subirá a la nube al volver la red.');
-  if (familyId === user.id) offerLocalImport();
+  try { const kept = sessionStorage.getItem('nia-cv:invite-after-login'); if (kept) { inviteFromLink = kept; sessionStorage.removeItem('nia-cv:invite-after-login'); } } catch { /* nada */ }
+  if (inviteFromLink && !offline) {
+    // Ya tenía sesión y ha abierto un enlace de invitación: que confirme el código.
+    if (familyId === user.id && account.family?.propietario === user.id) askJoin(inviteFromLink);
+    else toast('Ya compartes este diario');
+    inviteFromLink = '';
+  } else if (familyId === user.id) offerLocalImport();
 }
 
 function readLastUser() {
@@ -331,6 +348,7 @@ async function offerLocalImport() {
 
 async function boot() {
   applyTheme();
+  readInviteLink();
   const inClaude = typeof globalThis.claude?.use === 'function';
   if (!inClaude && SUPABASE_URL && SUPABASE_ANON_KEY && globalThis.supabase?.createClient) return bootSupabase();
   try { await store.init(); } catch (e) { return fail(e); }

@@ -9,7 +9,7 @@ import { syncLabel } from './common.js';
 import { THEMES, getTheme, setTheme } from '../theme.js';
 import { pupIcon } from '../characters.js';
 
-export const APP_VERSION = '1.6.0';
+export const APP_VERSION = '1.7.0';
 
 const INTERVALS = [[0, 'Sin referencia'], [120, 'Cada 2 h'], [150, 'Cada 2 h 30'], [180, 'Cada 3 h'], [210, 'Cada 3 h 30'], [240, 'Cada 4 h']];
 
@@ -53,14 +53,30 @@ function familyRows() {
     <button class="settings-row danger" data-leave><span class="ico">${icons.close({ size: 18 })}</span><span class="grow">Dejar de compartir este diario</span></button>`;
 }
 
-/** Ventana con el código de invitación, para compartirlo o copiarlo. */
+/** Enlace de invitación: abre la app con el código ya escrito. */
+export const inviteLink = (code) => `${location.origin}${location.pathname}?codigo=${encodeURIComponent(code)}`;
+
+/** Mensaje de invitación (el que se envía por WhatsApp u otra app). */
+export function inviteMessage(code, babyName = 'Nia') {
+  return [
+    `¡Hola! Te invito al diario de ${babyName} en Nia CV, para que los dos podamos apuntar sus biberones, cacas y su álbum. 🍼`,
+    '',
+    `1. Abre este enlace en el iPhone: ${inviteLink(code)}`,
+    '2. Crea tu cuenta con tu correo y una contraseña.',
+    `3. Comprueba que el código de invitación es: ${code}`,
+    '',
+    'El código es de un solo uso y caduca en 48 horas.',
+  ].join('\n');
+}
+
+/** Ventana con el código de invitación, para enviarlo por WhatsApp o copiarlo. */
 async function showInvite() {
   let inv;
   try { inv = await createInvite(); } catch (e) { return toast(e.message); }
   const code = inv.codigo;
   const until = new Date(inv.caduca).toLocaleString('es-ES', { weekday: 'long', hour: '2-digit', minute: '2-digit' });
-  const url = location.origin + location.pathname;
-  const text = `Te invito al diario de ${store.settings.babyName || 'Nia'} en Nia CV.\n1. Abre ${url} en Safari.\n2. Pulsa "Crear una cuenta nueva".\n3. Escribe tu correo, una contraseña y este código de invitación: ${code}\n(El código caduca en 48 horas.)`;
+  const text = inviteMessage(code, store.settings.babyName || 'Nia');
+  const whatsapp = `https://wa.me/?text=${encodeURIComponent(text)}`;
   openSheet({
     label: 'Invitar a mi pareja',
     render(body) {
@@ -69,16 +85,17 @@ async function showInvite() {
         <p class="subtle">Tu pareja tendrá su propia cuenta (su correo y su contraseña) y verá y apuntará en este mismo diario.</p>
         <div class="invite-code" aria-label="Código ${code.split('').join(' ')}">${code}</div>
         <p class="subtle" style="text-align:center;margin:0 0 16px">Válido hasta el ${esc(until)} · un solo uso</p>
-        <div class="card prose" style="padding:16px 18px">
-          <p><strong>Qué tiene que hacer tu pareja:</strong></p>
-          <p>1. Abrir <strong>${esc(url.replace(/^https?:\/\//, ''))}</strong> en Safari.</p>
-          <p>2. Pulsar <strong>Crear una cuenta nueva</strong>.</p>
-          <p>3. Escribir su correo, una contraseña y este código en <strong>Código de invitación</strong>.</p>
-          <p>Si ya tenía cuenta: <strong>Ajustes → Familia → Tengo un código de invitación</strong>.</p>
-        </div>
-        <div class="form-actions" style="margin-top:16px">
-          <button type="button" class="btn btn-primary btn-block" data-share-invite>${icons.upload({ size: 18 })} Enviar invitación</button>
+        <div class="form-actions">
+          <a class="btn btn-whatsapp btn-block" href="${esc(whatsapp)}" target="_blank" rel="noopener" data-whatsapp>${icons.whatsapp({ size: 20 })} Enviar por WhatsApp</a>
+          <button type="button" class="btn btn-ghost btn-block" data-share-invite>${icons.upload({ size: 18 })} Otras apps</button>
           <button type="button" class="btn btn-ghost btn-block" data-copy-invite>Copiar código</button>
+        </div>
+        <div class="card prose" style="padding:16px 18px;margin-top:16px">
+          <p><strong>Qué le llegará a tu pareja:</strong> un mensaje con el enlace a Nia CV y este código.</p>
+          <p>1. Toca el enlace: se abre <strong>Crear cuenta</strong> con el código ya puesto.</p>
+          <p>2. Escribe <strong>su correo y su contraseña</strong> y pulsa <strong>Crear cuenta</strong>.</p>
+          <p>3. Comprueba que el código coincide con el que le dices tú. ¡Y ya está dentro del diario!</p>
+          <p class="subtle">Si ya tenía cuenta, el enlace le abre "Tengo un código" para confirmar.</p>
         </div>`;
       body.addEventListener('click', async (e) => {
         if (e.target.closest('[data-share-invite]')) {
@@ -93,16 +110,16 @@ async function showInvite() {
   });
 }
 
-/** Ventana para escribir un código recibido. */
-function askJoin() {
+/** Ventana para escribir un código recibido (llega ya escrito si se abrió el enlace). */
+export function askJoin(prefill = '') {
   openSheet({
     label: 'Unirme a un diario',
     render(body, close) {
-      body.innerHTML = `<form novalidate><div class="sheet-head"><h2 class="h-section">Tengo un código</h2>
+      body.innerHTML = `<form novalidate><div class="sheet-head"><h2 class="h-section">${prefill ? 'Te han invitado' : 'Tengo un código'}</h2>
           <button type="button" class="icon-btn" data-close aria-label="Cerrar">${icons.close()}</button></div>
-        <p class="subtle">Escribe el código que te ha dado tu pareja. A partir de ahora verás su diario; lo que hubieras apuntado tú en tu cuenta se queda guardado aparte.</p>
+        <p class="subtle">${prefill ? 'Comprueba que el código coincide con el que te ha dado tu pareja y pulsa Unirme.' : 'Escribe el código que te ha dado tu pareja.'} A partir de ahora verás su diario; lo que hubieras apuntado tú en tu cuenta se queda guardado aparte.</p>
         <label class="auth-field" style="margin-top:14px"><span class="eyebrow">Código de invitación</span>
-          <input class="auth-input invite-input" name="code" autocomplete="off" autocapitalize="characters" maxlength="6" placeholder="Ej. K7PM3Q"></label>
+          <input class="auth-input invite-input" name="code" value="${esc(prefill)}" autocomplete="off" autocapitalize="characters" maxlength="6" placeholder="Ej. K7PM3Q"></label>
         <p class="form-error" role="alert"></p>
         <div class="form-actions"><button type="submit" class="btn btn-primary btn-block">Unirme al diario</button></div></form>`;
       const form = $('form', body);

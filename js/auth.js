@@ -25,7 +25,7 @@ export function authMessage(error) {
  * mode: 'login' | 'signup' | 'reset' | 'recovery'
  * Resuelve `onSession(session)` cuando la persona entra.
  */
-export function showAuth(root, client, { mode = 'login', onSession, notice = '' }) {
+export function showAuth(root, client, { mode = 'login', onSession, notice = '', invite = '' }) {
   const tabbar = document.getElementById('tabbar');
   if (tabbar) tabbar.hidden = true;
   root.hidden = false;
@@ -36,7 +36,11 @@ export function showAuth(root, client, { mode = 'login', onSession, notice = '' 
     reset: ['Recuperar contraseña', 'Te enviaremos un enlace al correo para elegir una nueva.'],
     recovery: ['Nueva contraseña', 'Escribe la contraseña que quieres usar a partir de ahora.'],
   };
-  const [title, sub] = titles[mode];
+  let [title, sub] = titles[mode];
+  if (mode === 'signup' && invite) {
+    title = 'Te han invitado';
+    sub = 'Crea tu cuenta con tu correo y una contraseña. El código de invitación ya está puesto: comprueba que coincide con el que te han dado.';
+  }
   const needEmail = mode !== 'recovery';
   const needPass = mode !== 'reset';
   const needRepeat = mode === 'signup' || mode === 'recovery';
@@ -58,7 +62,7 @@ export function showAuth(root, client, { mode = 'login', onSession, notice = '' 
         <input class="auth-input" type="password" name="repeat" id="auth-repeat" autocomplete="new-password" required></label>
         <p class="field-hint">Mínimo ${MIN_PASSWORD} caracteres.</p>` : ''}
       ${mode === 'signup' ? `<label class="auth-field"><span class="eyebrow">Código de invitación · opcional</span>
-        <input class="auth-input invite-input" name="invite" id="auth-invite" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="6" placeholder="Ej. K7PM3Q"></label>
+        <input class="auth-input invite-input" name="invite" id="auth-invite" value="${esc(invite)}" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="6" placeholder="Ej. K7PM3Q"></label>
         <p class="field-hint">Te lo da tu pareja desde Ajustes → Familia → Invitar a mi pareja.</p>` : ''}
       ${mode === 'login' || mode === 'signup' ? `<label class="remember"><input type="checkbox" name="remember" ${getRemember() ? 'checked' : ''}>
         <span><strong>Mantener la sesión iniciada</strong><br><span class="subtle">No tendrás que volver a escribir tus datos en este dispositivo.</span></span></label>` : ''}
@@ -70,6 +74,7 @@ export function showAuth(root, client, { mode = 'login', onSession, notice = '' 
         <button class="link-btn" data-mode="signup">Crear una cuenta nueva</button>
         <button class="link-btn" data-mode="signup">¿Te han invitado? Crea tu cuenta con el código</button>` : ''}
       ${mode === 'signup' || mode === 'reset' ? '<button class="link-btn" data-mode="login">Ya tengo cuenta · Entrar</button>' : ''}
+      ${mode === 'signup' && invite ? '<p class="subtle" style="text-align:center;margin:4px 0 0">Si ya tienes cuenta, entra y después confirma el código.</p>' : ''}
     </div>
     <p class="subtle auth-foot">${icons.shield({ size: 16 })} El diario solo lo ven tu cuenta y las personas que invites.</p>
     <div class="deco-row" aria-hidden="true">${paw(12)}${smallStar(8)}${paw(12)}</div>
@@ -78,7 +83,7 @@ export function showAuth(root, client, { mode = 'login', onSession, notice = '' 
   const form = $('form', root);
   const err = $('.form-error', root);
   const btn = $('button[type="submit"]', form);
-  const go = (m, n = '') => showAuth(root, client, { mode: m, onSession, notice: n });
+  const go = (m, n = '') => showAuth(root, client, { mode: m, onSession, notice: n, invite: m === 'signup' ? invite : '' });
 
   root.onclick = (e) => {
     const m = e.target.closest('[data-mode]');
@@ -111,6 +116,7 @@ export function showAuth(root, client, { mode = 'login', onSession, notice = '' 
     btn.textContent = 'Un momento…';
     try {
       if (mode === 'login') {
+        if (invite) sessionStorage.setItem('nia-cv:invite-after-login', invite);
         const { data, error } = await client.auth.signInWithPassword({ email, password });
         if (error) throw error;
         return finish(data.session);
