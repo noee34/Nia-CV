@@ -13,7 +13,7 @@ await mkdir(shots, { recursive: true });
 
 /* ---------- Servidor simulado (auth + tablas con "RLS") ---------- */
 const users = new Map(); // email -> { id, password }
-const tables = { biberones: [], deposiciones: [], ajustes: [] };
+const tables = { biberones: [], deposiciones: [], ajustes: [], album: [] };
 const pages = new Set();
 
 let serverDown = false; // simula que la nube no responde

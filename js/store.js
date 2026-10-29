@@ -5,8 +5,11 @@
 // y use `id` + `updatedAt` para resolver conflictos (ver data-io.mergeRecords).
 
 const DB_NAME = 'nia-cv';
-const DB_VERSION = 1;
-export const TYPES = ['bottles', 'poops'];
+const DB_VERSION = 2; // 2: añade el álbum
+/** Todos los tipos de datos que se guardan y sincronizan. */
+export const TYPES = ['bottles', 'poops', 'album'];
+/** Registros del día a día (los que exporta el CSV y borra "Borrar todos los registros"). */
+export const RECORD_TYPES = ['bottles', 'poops'];
 
 export const DEFAULT_SETTINGS = {
   babyName: 'Nia',
@@ -81,15 +84,20 @@ export class CloudAdapter {
   constructor(db) {
     this.db = db;
     this.where = new Map(); // id -> mes donde está guardado
-    this.cache = { bottles: [], poops: [] };
+    this.cache = { bottles: [], poops: [], album: [] };
   }
-  async open() { this.ingest((await this.db.collection('months').get()).docs); }
+  async open() {
+    this.ingest((await this.db.collection('months').get()).docs);
+    this.ingestAlbum((await this.db.collection('album').get()).docs);
+  }
+  /** El álbum va aparte: un documento por mes del bebé (las fotos no caben juntas). */
+  ingestAlbum(docs) { this.cache.album = docs.map((d) => d.data()).filter(Boolean); }
   ingest(docs) {
-    const out = { bottles: [], poops: [] };
+    const out = { bottles: [], poops: [], album: this.cache.album || [] };
     this.where.clear();
     for (const d of docs) {
       const body = d.data() || {};
-      for (const t of TYPES) {
+      for (const t of RECORD_TYPES) {
         for (const [id, r] of Object.entries(body[t] || {})) {
           if (r) { out[t].push(r); this.where.set(id, d.id); }
         }
@@ -112,6 +120,7 @@ export class CloudAdapter {
     }
   }
   async put(type, rec) {
+    if (type === 'album') return this.db.doc(`album/${rec.id}`).set(rec);
     const m = this.monthOf(rec.at);
     const old = this.where.get(rec.id);
     await this.merge(m, type, { [rec.id]: rec });
@@ -119,6 +128,7 @@ export class CloudAdapter {
     this.where.set(rec.id, m);
   }
   async putMany(type, recs) {
+    if (type === 'album') { for (const r of recs) await this.put(type, r); return; }
     const byMonth = new Map();
     for (const r of recs) {
       const m = this.monthOf(r.at);
@@ -131,11 +141,16 @@ export class CloudAdapter {
     }
   }
   async delete(type, id) {
+    if (type === 'album') return this.db.doc(`album/${id}`).delete();
     const m = this.where.get(id);
     if (m) await this.merge(m, type, { [id]: null });
     this.where.delete(id);
   }
   async clear(type) {
+    if (type === 'album') {
+      for (const d of (await this.db.collection('album').get()).docs) await this.db.doc(`album/${d.id}`).delete();
+      return;
+    }
     const snap = await this.db.collection('months').get();
     for (const d of snap.docs) {
       const body = { ...(d.data() || {}) };
@@ -149,6 +164,7 @@ export class CloudAdapter {
   /** Cambios en vivo hechos desde otros dispositivos. */
   subscribe({ onRecords, onSettings, onError }) {
     this.db.collection('months').onSnapshot((snap) => { this.ingest(snap.docs); onRecords(); }, onError);
+    this.db.collection('album').onSnapshot((snap) => { this.ingestAlbum(snap.docs); onRecords(); }, onError);
     this.db.doc('meta/settings').onSnapshot((s) => { if (s.exists) onSettings(s.data().value); }, onError);
   }
 }
@@ -171,7 +187,7 @@ export function uuid() {
 
 class Store {
   constructor() {
-    this.data = { bottles: [], poops: [] };
+    this.data = { bottles: [], poops: [], album: [] };
     this.settings = { ...DEFAULT_SETTINGS };
     this.listeners = new Set();
     this.backend = 'none';
@@ -263,7 +279,7 @@ class Store {
   }
 
   async clearAll() {
-    for (const t of TYPES) { await this.adapter.clear(t); this.data[t] = []; }
+    for (const t of RECORD_TYPES) { await this.adapter.clear(t); this.data[t] = []; }
     this.emit();
   }
 

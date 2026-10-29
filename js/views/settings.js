@@ -7,10 +7,9 @@ import { dayKey } from '../dates.js';
 import { signOut } from '../account.js';
 import { syncLabel } from './common.js';
 import { THEMES, getTheme, setTheme } from '../theme.js';
-import { photoFromFile } from '../photo.js';
-import { headIcon } from '../characters.js';
+import { pupIcon } from '../characters.js';
 
-export const APP_VERSION = '1.4.0';
+export const APP_VERSION = '1.5.0';
 
 const INTERVALS = [[0, 'Sin referencia'], [120, 'Cada 2 h'], [150, 'Cada 2 h 30'], [180, 'Cada 3 h'], [210, 'Cada 3 h 30'], [240, 'Cada 4 h']];
 
@@ -41,7 +40,7 @@ export function openSettings() {
   openSheet({
     label: 'Ajustes',
     onClose: () => unsub?.(),
-    render(body) {
+    render(body, close) {
       const draw = () => {
         const s = store.settings;
         const nB = store.all('bottles').length, nP = store.all('poops').length;
@@ -71,19 +70,10 @@ export function openSettings() {
           </div>
         </div>
 
-        <div class="eyebrow" style="margin-top:22px">Personal</div>
+        <div class="eyebrow" style="margin-top:22px">Datos de ${esc(s.babyName || 'Nia')}</div>
         <div class="settings-group">
-          <label class="settings-row"><span class="ico">${icons.heart({ size: 18 })}</span><span class="grow">Nombre del bebé</span>
-            <input type="text" name="babyName" value="${esc(s.babyName)}" maxlength="24" autocapitalize="words" enterkeyhint="done"></label>
-          <div class="settings-row" style="border-bottom:0">
-            ${s.photo ? `<img class="photo-thumb" src="${s.photo}" alt="">` : `<span class="ico" style="background:var(--blue-wash);overflow:hidden">${headIcon('nube', 34)}</span>`}
-            <span class="grow">Foto de ${esc(s.babyName || 'Nia')}<br><span class="subtle">${s.photo ? 'Aparece en la pantalla Hoy' : 'Opcional: sustituye al dibujo del jardín en Hoy'}</span></span>
-          </div>
-          <div class="photo-actions">
-            <label class="btn btn-ghost btn-sm">${icons.upload({ size: 16 })} ${s.photo ? 'Cambiar foto' : 'Elegir foto'}
-              <input type="file" accept="image/*" name="photo" class="sr-only"></label>
-            ${s.photo ? `<button type="button" class="btn btn-danger btn-sm" data-remove-photo>${icons.trash({ size: 16 })} Quitar foto</button>` : ''}
-          </div>
+          <button class="settings-row" data-go-profile><span class="ico">${icons.heart({ size: 18 })}</span>
+            <span class="grow">Datos personales, foto y álbum<br><span class="subtle">En la pestaña ${esc((s.babyName || 'Nia').split(' ')[0])}, abajo a la derecha</span></span>${icons.right({ size: 16 })}</button>
         </div>
 
         <div class="eyebrow" style="margin-top:22px">Biberones</div>
@@ -111,7 +101,7 @@ export function openSettings() {
           ${store.backend === 'supabase' ? `<p><strong>Tus registros se guardan primero en este dispositivo y después en la nube (Supabase), en tu cuenta.</strong> Puedes entrar desde cualquier móvil, tablet u ordenador con tu correo y contraseña.</p>
           <p>Si no hay conexión, lo que registres queda guardado aquí y se sube solo en cuanto vuelva la red. El indicador de la pantalla Hoy te dice si todo está en la nube.</p>
           <p>La base de datos aplica reglas de seguridad: cada cuenta solo puede leer y modificar sus propios registros. La conexión va cifrada (HTTPS). Nia CV no tiene analíticas ni publicidad y no comparte tus datos con nadie.</p>
-          <p>Si eliges una foto de cabecera, se guarda reducida junto con tus ajustes, en tu cuenta, para que la veas en todos tus dispositivos.</p>
+          <p>Los datos personales (nacimiento, grupo sanguíneo, talla), la foto y el álbum también se guardan en tu cuenta, con fotos reducidas, para que los veas en todos tus dispositivos.</p>
           <p>Al cerrar sesión se borra la copia de este dispositivo; los datos siguen en tu cuenta.</p>` : cloud ? `<p><strong>Tus registros se guardan en la nube, dentro de esta página privada de claude.ai.</strong> Puedes abrirla desde cualquier dispositivo con tu cuenta de Claude, y los cambios se sincronizan al momento.</p>
           <p>Solo tú tienes acceso, salvo que la compartas desde el menú Compartir. Para que otra persona (por ejemplo, la otra mamá o el otro papá) pueda registrar, compártela con ella como Colaborador o Editor.</p>
           <p>Nia CV no tiene analíticas ni publicidad y no envía tus datos a ningún otro servicio. Los registros solo salen de aquí si exportas un CSV o una copia de seguridad.</p>
@@ -137,13 +127,6 @@ export function openSettings() {
         }
         if (t.name === 'interval') await store.updateSettings({ nextIntervalMin: Number(t.value) });
         if (t.name === 'restore' && t.files?.[0]) await restore(t.files[0]);
-        if (t.name === 'photo' && t.files?.[0]) {
-          try {
-            const photo = await photoFromFile(t.files[0]);
-            await store.updateSettings({ photo });
-            toast('Foto guardada');
-          } catch (err) { toast(err.message || 'No se pudo guardar la foto'); }
-        }
       });
 
       body.addEventListener('click', async (e) => {
@@ -168,7 +151,7 @@ export function openSettings() {
             const ok = await deliverFile(`nia-cv-registros-${stamp}.csv`, toCSV(store.all('bottles'), store.all('poops')), 'text/csv;charset=utf-8');
             if (ok) toast('CSV preparado');
           } else {
-            const data = toBackup({ bottles: store.all('bottles'), poops: store.all('poops'), settings: store.settings });
+            const data = toBackup({ bottles: store.all('bottles'), poops: store.all('poops'), album: store.all('album'), settings: store.settings });
             const ok = await deliverFile(`nia-cv-copia-${stamp}.json`, JSON.stringify(data, null, 2), 'application/json');
             if (ok) toast('Copia de seguridad creada');
           }
@@ -180,12 +163,7 @@ export function openSettings() {
           store.emit(); // vuelve a dibujar Ajustes y la pantalla de fondo
           return toast({ auto: 'Modo automático', light: 'Modo claro', dark: 'Modo oscuro' }[pick.dataset.themePick]);
         }
-        if (e.target.closest('[data-remove-photo]')) {
-          const ok = await confirmDialog({ title: '¿Quitar la foto?', message: 'Volverá a aparecer el dibujo del jardín en la pantalla Hoy.', confirmLabel: 'Quitar foto' });
-          if (!ok) return;
-          await store.updateSettings({ photo: null });
-          return toast('Foto quitada');
-        }
+        if (e.target.closest('[data-go-profile]')) { close(); location.hash = 'nia'; return; }
         if (e.target.closest('[data-signout]')) return signOut();
         if (e.target.closest('[data-sync-now]')) {
           await store.adapter.pull();
@@ -194,7 +172,7 @@ export function openSettings() {
         if (e.target.closest('[data-wipe]')) {
           const ok = await confirmDialog({
             title: '¿Borrar todos los registros?',
-            message: (store.backend === 'supabase' ? 'Se eliminarán todos los biberones y deposiciones de tu cuenta, en todos los dispositivos.' : 'Se eliminarán todos los biberones y deposiciones de este dispositivo.') + ' Esta acción no se puede deshacer. Te recomendamos crear antes una copia de seguridad.',
+            message: (store.backend === 'supabase' ? 'Se eliminarán todos los biberones y deposiciones de tu cuenta, en todos los dispositivos.' : 'Se eliminarán todos los biberones y deposiciones de este dispositivo.') + ' El álbum y los datos de Nia no se borran. Esta acción no se puede deshacer. Te recomendamos crear antes una copia de seguridad.',
             confirmLabel: 'Borrar todo',
           });
           if (!ok) return;
@@ -208,13 +186,13 @@ export function openSettings() {
           const data = parseBackup(await file.text());
           const ok = await confirmDialog({
             title: 'Restaurar copia',
-            message: `La copia contiene ${data.bottles.length} biberones y ${data.poops.length} deposiciones. Se combinarán con los registros actuales sin duplicarlos.`,
+            message: `La copia contiene ${data.bottles.length} biberones, ${data.poops.length} deposiciones y ${data.album.length} fotos del álbum. Se combinarán con los registros actuales sin duplicarlos.`,
             confirmLabel: 'Restaurar', danger: false,
           });
           if (!ok) return;
           let added = 0, updated = 0;
           for (const t of TYPES) {
-            const r = mergeRecords(store.all(t), data[t]);
+            const r = mergeRecords(store.all(t), data[t] || []);
             added += r.added; updated += r.updated;
             await store.replaceAll(t, r.merged);
           }

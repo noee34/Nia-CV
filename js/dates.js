@@ -125,3 +125,42 @@ export function relativeDayLabel(key, todayKey = dayKey()) {
 }
 
 export { cap };
+
+/**
+ * Suma meses a un día. Si el día no existe en el mes de destino (31 de enero +
+ * 1 mes), se usa el último día de ese mes (28 o 29 de febrero).
+ */
+export function addMonths(key, n) {
+  const d = parseDayKey(key);
+  const target = new Date(d.getFullYear(), d.getMonth() + n, 1);
+  const day = Math.min(d.getDate(), daysInMonth(target.getFullYear(), target.getMonth()));
+  return dayKey(new Date(target.getFullYear(), target.getMonth(), day));
+}
+
+/** Meses completos cumplidos entre el nacimiento y hoy (0 si aún no ha cumplido uno). */
+export function monthsBetween(birthKey, todayKey = dayKey()) {
+  if (!birthKey || todayKey < birthKey) return 0;
+  const a = parseDayKey(birthKey), b = parseDayKey(todayKey);
+  let m = (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
+  if (addMonths(birthKey, m) > todayKey) m -= 1;
+  return Math.max(0, m);
+}
+
+/** Edad en años, meses y días: { years, months, days, totalMonths, totalDays }. */
+export function ageParts(birthKey, todayKey = dayKey()) {
+  if (!birthKey || todayKey < birthKey) return null;
+  const totalMonths = monthsBetween(birthKey, todayKey);
+  const days = diffDays(addMonths(birthKey, totalMonths), todayKey);
+  return { years: Math.floor(totalMonths / 12), months: totalMonths % 12, days, totalMonths, totalDays: diffDays(birthKey, todayKey) };
+}
+
+/** "Recién nacida", "12 días", "3 meses y 5 días", "1 año y 2 meses". */
+export function ageText(birthKey, todayKey = dayKey()) {
+  const p = ageParts(birthKey, todayKey);
+  if (!p) return '';
+  const n = (v, one, many) => `${v} ${v === 1 ? one : many}`;
+  if (p.totalDays === 0) return 'Recién nacida';
+  if (p.totalMonths === 0) return n(p.days, 'día', 'días');
+  if (p.years === 0) return p.days ? `${n(p.months, 'mes', 'meses')} y ${n(p.days, 'día', 'días')}` : n(p.months, 'mes', 'meses');
+  return p.months ? `${n(p.years, 'año', 'años')} y ${n(p.months, 'mes', 'meses')}` : n(p.years, 'año', 'años');
+}

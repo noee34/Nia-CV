@@ -2,7 +2,7 @@
 // para que ocupe poco (unos 50–80 KB) y se sincronice rápido entre dispositivos.
 
 const MAX_SIDE = 720;       // píxeles del lado mayor
-const MAX_CHARS = 350_000;  // tamaño máximo del texto de la imagen (~260 KB)
+const MAX_CHARS = 230_000;  // tamaño máximo del texto de la imagen (~170 KB)
 
 function loadImage(file) {
   return new Promise((resolve, reject) => {

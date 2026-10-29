@@ -16,12 +16,14 @@ import { renderBottles, bottleCalendarHTML } from './views/bottles.js';
 import { renderPoops } from './views/poops.js';
 import { renderDiary } from './views/diary.js';
 import { openSettings } from './views/settings.js';
+import { renderProfile, openProfileForm, openAlbumMonth, setHeaderPhoto, removeHeaderPhoto } from './views/profile.js';
 
 const TABS = {
   hoy: { label: 'Hoy', icon: icons.home, render: renderToday },
   biberones: { label: 'Biberones', icon: icons.bottle, render: renderBottles },
   cacas: { label: 'Cacas', icon: icons.diaper, render: renderPoops },
   diario: { label: 'Diario', icon: icons.calendar, render: renderDiary },
+  nia: { label: 'Nia', icon: icons.heart, render: renderProfile },
 };
 
 const ym = (key) => { const d = parseDayKey(key); return [d.getFullYear(), d.getMonth()]; };
@@ -45,7 +47,7 @@ const state = {
 function renderTabbar() {
   $('#tabbar').innerHTML = `<div class="tabbar-inner" role="tablist">${Object.entries(TABS).map(([id, t]) =>
     `<a class="tab ${state.tab === id ? 'on' : ''}" href="#${id}" role="tab" aria-selected="${state.tab === id}" aria-current="${state.tab === id ? 'page' : 'false'}">
-      <span class="tab-ico">${t.icon({ size: 22 })}</span><span>${t.label}</span></a>`).join('')}</div>`;
+      <span class="tab-ico">${t.icon({ size: 22 })}</span><span>${id === 'nia' ? esc((store.settings.babyName || 'Nia').split(' ')[0]) : t.label}</span></a>`).join('')}</div>`;
 }
 
 function render() {
@@ -130,9 +132,15 @@ document.addEventListener('click', (e) => {
       'add-poop-day': () => openPoopForm({ forDay: state.poopsSelected }),
       'bottle-calendar': openBottleCalendar,
       'poops-more': () => { state.poopLimit += 40; render(); },
+      'edit-profile': openProfileForm,
+      'remove-photo': removeHeaderPhoto,
+      'go-profile': () => { location.hash = 'nia'; },
     };
     return actions[action]?.();
   }
+
+  const album = t.closest('[data-album]');
+  if (album) return openAlbumMonth(Number(album.dataset.album));
 
   const edit = t.closest('[data-edit]');
   if (edit) return editRecord(edit.dataset.edit, edit.dataset.id);
@@ -177,6 +185,10 @@ document.addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => {
   const tr = e.target.closest?.('tr[data-key]');
   if (tr && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); selectDiaryDay(tr.dataset.key); }
+});
+
+document.addEventListener('change', (e) => {
+  if (e.target.name === 'header-photo' && e.target.files?.[0]) setHeaderPhoto(e.target.files[0]);
 });
 
 window.addEventListener('hashchange', () => { if (started && TABS[location.hash.slice(1)]) go(location.hash.slice(1)); });

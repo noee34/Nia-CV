@@ -12,7 +12,8 @@
 -- QUÉ CREA
 --   · biberones     → una fila por cada toma
 --   · deposiciones  → una fila por cada caca
---   · ajustes       → una fila por cuenta (nombre del bebé, cantidades rápidas…)
+--   · ajustes       → una fila por cuenta (datos del bebé, cantidades rápidas…)
+--   · album         → una fila por mes del álbum (nacimiento y meses 1 a 12): foto y nota
 --
 -- SEGURIDAD
 --   Se activa la "seguridad por filas" (Row Level Security). Cada cuenta solo
@@ -62,14 +63,30 @@ create table if not exists public.ajustes (
 );
 
 
+-- Álbum mes a mes (0 = nacimiento, 1 a 12 = meses cumplidos) --------------------
+create table if not exists public.album (
+  id          uuid primary key,
+  usuario_id  uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  mes         smallint not null check (mes between 0 and 12),
+  foto        text not null default '' check (char_length(foto) <= 400000),  -- foto reducida (JPEG en texto)
+  nota        text not null default '' check (char_length(nota) <= 500),
+  fecha_hora  bigint not null,
+  creado      bigint not null,
+  modificado  bigint not null
+);
+create index if not exists album_usuario_mes on public.album (usuario_id, mes);
+
+
 -- Reglas de acceso: cada cuenta solo ve y toca lo suyo --------------------------
 alter table public.biberones    enable row level security;
 alter table public.deposiciones enable row level security;
 alter table public.ajustes      enable row level security;
+alter table public.album        enable row level security;
 
 drop policy if exists "solo sus biberones"    on public.biberones;
 drop policy if exists "solo sus deposiciones" on public.deposiciones;
 drop policy if exists "solo sus ajustes"      on public.ajustes;
+drop policy if exists "solo su album"         on public.album;
 
 create policy "solo sus biberones" on public.biberones
   for all to authenticated
@@ -86,6 +103,11 @@ create policy "solo sus ajustes" on public.ajustes
   using (usuario_id = (select auth.uid()))
   with check (usuario_id = (select auth.uid()));
 
+create policy "solo su album" on public.album
+  for all to authenticated
+  using (usuario_id = (select auth.uid()))
+  with check (usuario_id = (select auth.uid()));
+
 
 -- Cambios en vivo entre dispositivos (lo que se apunta en el móvil aparece en
 -- la tablet sin recargar) -------------------------------------------------------
@@ -93,7 +115,7 @@ do $$
 declare
   tabla text;
 begin
-  foreach tabla in array array['biberones', 'deposiciones', 'ajustes'] loop
+  foreach tabla in array array['biberones', 'deposiciones', 'ajustes', 'album'] loop
     if not exists (
       select 1 from pg_publication_tables
       where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = tabla

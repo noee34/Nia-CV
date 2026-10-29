@@ -8,7 +8,7 @@
 // Al traer datos de la nube (pull) se reaplican encima los cambios aún no
 // enviados, para que nunca desaparezca de la pantalla algo recién registrado.
 
-const TYPES = ['bottles', 'poops'];
+const TYPES = ['bottles', 'poops', 'album'];
 const RETRY_MS = 15000;
 
 export class SyncedAdapter {
@@ -20,7 +20,7 @@ export class SyncedAdapter {
     this.local = local;
     this.remote = remote;
     this.outbox = [];
-    this.cache = { bottles: [], poops: [] };
+    this.cache = { bottles: [], poops: [], album: [] };
     this.state = { online: globalThis.navigator?.onLine ?? true, pending: 0, syncing: false, lastSync: null, error: null };
     this.handlers = {};
   }
@@ -115,13 +115,14 @@ export class SyncedAdapter {
 
   /* ---------- Traer de la nube ---------- */
 
-  async pull() {
-    if (this.pulling) return this.pulling;
+  /** Trae de la nube los tipos indicados (por defecto, todos). */
+  async pull(types = TYPES) {
+    if (this.pulling) { this.pullAgain = [...new Set([...(this.pullAgain || []), ...types])]; return this.pulling; }
     this.pulling = (async () => {
       try {
         await this.flush();
         const fresh = {};
-        for (const t of TYPES) fresh[t] = await this.remote.fetchAll(t);
+        for (const t of TYPES) fresh[t] = types.includes(t) ? await this.remote.fetchAll(t) : this.cache[t].slice();
         const remoteSettings = await this.remote.getSettings();
         // Lo que aún no se ha enviado manda sobre lo que hay en la nube.
         let localSettings = await this.local.getMeta('settings');
@@ -132,7 +133,7 @@ export class SyncedAdapter {
           else if (op.op === 'clear') fresh[op.type] = [];
         }
         const pendingSettings = this.outbox.some((o) => o.op === 'settings');
-        for (const t of TYPES) {
+        for (const t of types) {
           await this.local.clear(t);
           await this.local.putMany(t, fresh[t]);
           this.cache[t] = fresh[t];
@@ -150,6 +151,7 @@ export class SyncedAdapter {
         this.status({ error: describe(e), online: globalThis.navigator?.onLine ?? false });
       } finally {
         this.pulling = null;
+        if (this.pullAgain) { const again = this.pullAgain; this.pullAgain = null; this.pull(again); }
       }
     })();
     return this.pulling;
@@ -158,8 +160,16 @@ export class SyncedAdapter {
   /** Lo llama el store: conecta cambios en vivo, reconexión y reintentos. */
   subscribe(handlers) {
     this.handlers = handlers;
+    // Si la nube dice qué tabla cambió, solo se trae esa (las fotos del álbum pesan más).
+    const BY_TABLE = { biberones: 'bottles', deposiciones: 'poops', album: 'album', ajustes: null };
     let t;
-    const soon = () => { clearTimeout(t); t = setTimeout(() => this.pull(), 600); };
+    let pending = new Set();
+    const soon = (change) => {
+      const type = BY_TABLE[change?.table];
+      if (type) pending.add(type); else TYPES.forEach((x) => pending.add(x));
+      clearTimeout(t);
+      t = setTimeout(() => { const types = [...pending]; pending = new Set(); this.pull(types); }, 600);
+    };
     this.unwatch = this.remote.onChange?.(soon);
     if (globalThis.addEventListener) {
       addEventListener('online', () => { this.status({ online: true }); this.pull(); });

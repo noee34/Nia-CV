@@ -190,21 +190,30 @@ con Xcode y una cuenta de Apple Developer:
 
 ## 6. Ilustraciones y marca
 
-La app tiene su propia familia de personajes, dibujados en SVG en `js/characters.js`:
+La app tiene su propia familia de **caniches**, dibujados en SVG en `js/characters.js`, de
+cuerpo entero y con rasgos de la raza (pelo rizado, cara y hocico alargados, pompón en la
+cabeza, orejas largas rizadas, patas finas con pompones):
 
 | Personaje | Cómo es | Dónde aparece |
 |---|---|---|
-| **Nube** | Cachorro azul pastel, orejitas dobladas, huellita en el pecho | Hoy, Biberones, tarjeta de biberones, estados vacíos |
-| **Canela** | Cachorrita melocotón, orejas largas caídas, lazo azul | Hoy, Cacas, tarjeta de pañales |
-| **Mamá** | Color avena, orejas caídas y una flor | Diario y pantalla de acceso |
-| **Papá** | Verde salvia, orejas redondas y bufanda | Diario y pantalla de acceso |
+| **Nube** | Caniche gris plata, collar con medalla de estrella | Hoy, Biberones, tarjeta de biberones, estados vacíos |
+| **Canela** | Caniche albaricoque, lazo azul en el pompón | Hoy, Cacas, tarjeta de pañales |
+| **Mamá** | Caniche crema, con una flor | Diario y pantalla de acceso |
+| **Papá** | Caniche chocolate, con bufanda | Diario y pantalla de acceso |
 
 Son **diseños originales** de Nia CV: no se usan logotipos, personajes ni ilustraciones de
 ninguna serie. Las fuentes son de uso libre (SIL OFL, licencias en `fonts/`).
 
-**Foto de cabecera:** en *Ajustes → Personal → Foto* se puede elegir una foto del bebé, que
-sustituye al jardín en la pantalla Hoy (marco en arco con Nube y Canela asomándose). Se
-reduce en el dispositivo (`js/photo.js`) antes de guardarla con los ajustes.
+## Pestaña "Nia": datos personales y álbum
+
+- **Foto de cabecera** (también aparece en Hoy), reducida en el dispositivo (`js/photo.js`).
+- **Datos personales**: nombre, fecha de nacimiento (la **edad** se calcula sola y aparece
+  también en Hoy), **grupo sanguíneo** (A+, A−, B+, B−, AB+, AB−, 0+, 0− o "No lo sé") y
+  **talla** en centímetros con la fecha de la medición. Se guardan con los ajustes.
+- **Álbum del primer año**: nacimiento y meses 1 a 12. Cada mes muestra su fecha (calculada
+  desde el nacimiento; si el día no existe en ese mes se usa el último), marca el mes
+  actual y admite una foto y una nota. Tabla `album` en Supabase.
+- "Borrar todos los registros" (Ajustes) **no** borra el álbum ni los datos personales.
 
 ## 7. Privacidad
 Ver [`PRIVACY.md`](PRIVACY.md). En resumen: sin cuentas, sin servidores, sin analíticas;

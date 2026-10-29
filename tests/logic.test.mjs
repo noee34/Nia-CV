@@ -152,3 +152,32 @@ test('CSV con comillas y saltos de línea escapados', () => {
   assert.ok(csv.includes('biberon;2026-10-29;08:05;150;120'));
   assert.ok(csv.includes('deposicion;2026-10-29;10:20;;;Blanda;"amarilla; poca"'));
 });
+
+import { addMonths, monthsBetween, ageText, ageParts } from '../js/dates.js';
+
+test('addMonths: meses cortos, bisiestos y cambio de año', () => {
+  assert.equal(addMonths('2026-01-31', 1), '2026-02-28');
+  assert.equal(addMonths('2028-01-31', 1), '2028-02-29');
+  assert.equal(addMonths('2026-01-31', 2), '2026-03-31');
+  assert.equal(addMonths('2026-11-15', 2), '2027-01-15');
+  assert.equal(addMonths('2028-02-29', 12), '2029-02-28');
+  assert.equal(addMonths('2026-05-10', 0), '2026-05-10');
+});
+
+test('meses cumplidos y edad', () => {
+  assert.equal(monthsBetween('2026-05-10', '2026-06-09'), 0);
+  assert.equal(monthsBetween('2026-05-10', '2026-06-10'), 1);
+  assert.equal(monthsBetween('2026-01-31', '2026-02-28'), 1);
+  assert.equal(monthsBetween('2026-01-31', '2026-02-27'), 0);
+  assert.equal(monthsBetween('2026-05-10', '2027-05-10'), 12);
+  assert.equal(monthsBetween('2026-12-01', '2026-11-01'), 0);
+  assert.equal(ageText('2026-10-29', '2026-10-29'), 'Recién nacida');
+  assert.equal(ageText('2026-10-17', '2026-10-29'), '12 días');
+  assert.equal(ageText('2026-10-28', '2026-10-29'), '1 día');
+  assert.equal(ageText('2026-07-24', '2026-10-29'), '3 meses y 5 días');
+  assert.equal(ageText('2026-09-29', '2026-10-29'), '1 mes');
+  assert.equal(ageText('2025-08-29', '2026-10-29'), '1 año y 2 meses');
+  assert.equal(ageText('2025-10-29', '2026-10-29'), '1 año');
+  assert.equal(ageText('2026-11-05', '2026-10-29'), '', 'fecha futura: sin edad');
+  assert.equal(ageParts('2026-07-24', '2026-10-29').totalDays, 97);
+});

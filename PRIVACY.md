@@ -10,10 +10,13 @@ para que tus datos sean sólo tuyos.
 - Los registros que introduces: fecha y hora, cantidades de leche, consistencia de las
   deposiciones y observaciones opcionales.
 - Tus preferencias (cantidades rápidas, referencia de próximo biberón).
-- Si la eliges, una foto de cabecera, reducida en el propio dispositivo antes de guardarla.
+- Si los indicas, datos personales del bebé: fecha de nacimiento, grupo sanguíneo y talla.
+- Si las eliges, una foto de cabecera y las fotos del álbum mes a mes (con su nota),
+  reducidas en el propio dispositivo antes de guardarlas.
 
-No se piden fechas de nacimiento, datos de salud adicionales, ubicación, contactos, fotos ni
-ningún dato de identificación de la familia.
+Todos estos datos son opcionales. No se piden ubicación, contactos ni datos de
+identificación de la familia. El grupo sanguíneo es un dato de salud: solo lo ve quien
+entra con la cuenta, protegido por las mismas reglas de seguridad que el resto.
 
 ## Dónde se guardan
 **Versión con cuenta (usuario y contraseña):** en el dispositivo y en una base de datos

@@ -9,9 +9,13 @@ const PAGE = 1000; // Supabase devuelve como máximo 1000 filas por petición
 const CHUNK = 500;
 
 /** Tabla de Supabase para cada tipo de registro de la app. */
-export const TABLE = { bottles: 'biberones', poops: 'deposiciones' };
+export const TABLE = { bottles: 'biberones', poops: 'deposiciones', album: 'album' };
 
 const MAP = {
+  album: {
+    to: (r) => ({ id: r.id, mes: r.month, foto: r.photo || '', nota: r.notes || '', fecha_hora: r.at, creado: r.createdAt, modificado: r.updatedAt }),
+    from: (x) => ({ id: x.id, month: x.mes, photo: x.foto || '', notes: x.nota || '', at: Number(x.fecha_hora), createdAt: Number(x.creado), updatedAt: Number(x.modificado) }),
+  },
   bottles: {
     to: (r) => ({ id: r.id, fecha_hora: r.at, preparado_ml: r.prepared, tomado_ml: r.taken, observaciones: r.notes || '', creado: r.createdAt, modificado: r.updatedAt }),
     from: (x) => ({ id: x.id, at: Number(x.fecha_hora), prepared: x.preparado_ml, taken: x.tomado_ml, notes: x.observaciones || '', createdAt: Number(x.creado), updatedAt: Number(x.modificado) }),
@@ -71,7 +75,7 @@ export class SupabaseRemote {
   onChange(cb) {
     const filter = `usuario_id=eq.${this.userId}`;
     const ch = this.client.channel(`nia-${this.userId}`);
-    for (const table of ['biberones', 'deposiciones', 'ajustes']) {
+    for (const table of ['biberones', 'deposiciones', 'album', 'ajustes']) {
       ch.on('postgres_changes', { event: '*', schema: 'public', table, filter }, cb);
     }
     ch.subscribe();

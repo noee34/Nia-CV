@@ -1,9 +1,9 @@
 // Pantalla HOY: resumen del día y actividad reciente.
 import { store } from '../store.js';
 import { icons, logo, paw, consistencyIcon, smallStar } from '../art.js';
-import { gardenScene, headIcon, photoFrame } from '../characters.js';
+import { gardenScene, pupIcon, photoFrame } from '../characters.js';
 import { esc } from '../ui.js';
-import { dayKey, fmtLongDate, fmtTime } from '../dates.js';
+import { dayKey, fmtLongDate, fmtTime, ageText } from '../dates.js';
 import { onDay, bottleSummary, poopSummary, nextReference, CONSISTENCIES, byTimeAsc } from '../stats.js';
 import { ml, fmtAgo, plural, emptyState, syncLabel } from './common.js';
 
@@ -32,7 +32,7 @@ export function renderToday() {
 
   <section class="hero">
     <h1 class="h-display">${esc(name)}, <em>hoy</em></h1>
-    <div class="date-line">${fmtLongDate(key)}</div>
+    <div class="date-line">${fmtLongDate(key)}${store.settings.birthDate ? ` · <span class="age">${ageText(store.settings.birthDate, key)}</span>` : ''}</div>
     <div class="tagline">Tu pequeño diario de cuidados</div>
   </section>
   ${store.settings.photo
@@ -42,7 +42,7 @@ export function renderToday() {
   <article class="card" aria-labelledby="card-b">
     <div class="card-head">
       <span class="eyebrow" id="card-b">Biberones de hoy</span>
-      <span class="card-badge pup" title="Nube">${headIcon('nube', 46)}</span>
+      <span class="card-badge pup" title="Nube">${pupIcon('nube', 46)}</span>
     </div>
     <div class="metric"><span class="metric-num tnum">${bs.count}</span><span class="metric-unit">${bs.count === 1 ? 'toma' : 'tomas'}</span></div>
     <div class="metric-sub">${bs.count
@@ -63,7 +63,7 @@ export function renderToday() {
   <article class="card" aria-labelledby="card-p">
     <div class="card-head">
       <span class="eyebrow" id="card-p">Pañales y cacas</span>
-      <span class="card-badge pup terra" title="Canela">${headIcon('canela', 46)}</span>
+      <span class="card-badge pup terra" title="Canela">${pupIcon('canela', 46)}</span>
     </div>
     <div class="metric"><span class="metric-num tnum">${ps.count}</span><span class="metric-unit">${ps.count === 1 ? 'deposición hoy' : 'deposiciones hoy'}</span></div>
     <div class="metric-sub">${ps.count ? 'Registradas en el diario' : 'Cuando registres una deposición, aparecerá aquí'}</div>
