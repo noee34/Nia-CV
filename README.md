@@ -13,7 +13,7 @@ Funciona sin conexión, no necesita cuenta y guarda los datos sólo en el dispos
 
 ## Versión web con usuario y contraseña (recomendada)
 
-Web publicada con **GitHub Pages**, cuentas con contraseña y datos en la nube con
+Web publicada con **GitHub Pages** (*páginas de GitHub*, publicación gratuita), cuentas con contraseña y datos en la nube con
 **Supabase**. Cada registro se guarda primero en el dispositivo y se sube a la nube; si no hay
 conexión, espera y se sube solo. Guía paso a paso: **[PUESTA-EN-MARCHA.md](PUESTA-EN-MARCHA.md)**.
 
@@ -61,7 +61,8 @@ y funcione sin conexión. Cualquier hosting estático gratuito sirve. La opción
 
 ### Opción B — GitHub Pages
 1. Sube el contenido de esta carpeta a un repositorio de GitHub.
-2. *Settings → Pages → Deploy from a branch → `main` / root*.
+2. En el repositorio: **Settings** (*ajustes*) → **Pages** (*páginas*) → **Deploy from a branch**
+   (*publicar desde una rama*) → rama `main`, carpeta `/ (root)` (*raíz*) → **Save** (*guardar*).
 3. La app quedará en `https://TU-USUARIO.github.io/NOMBRE-REPO/`.
 
 ### Añadir a la pantalla de inicio
@@ -148,6 +149,15 @@ tests/                   Pruebas unitarias, de extremo a extremo y sin conexión
   propio cifrado). Basta con añadir otro adaptador en `store.js`.
 
 ### Modelo de datos
+
+En el código, los nombres internos (variables, funciones) están en inglés, que es lo
+habitual en programación; todos los comentarios, textos de la app y documentos están en
+castellano. En Supabase las tablas y columnas están en castellano:
+`biberones(id, usuario_id, fecha_hora, preparado_ml, tomado_ml, observaciones, creado, modificado)`,
+`deposiciones(id, usuario_id, fecha_hora, consistencia, observaciones, creado, modificado)` y
+`ajustes(usuario_id, valor)`.
+
+Formato interno en la app:
 
 ```js
 // Biberón (almacén "bottles")

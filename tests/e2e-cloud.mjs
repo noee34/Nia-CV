@@ -13,7 +13,7 @@ await mkdir(shots, { recursive: true });
 
 /* ---------- Servidor simulado (auth + tablas con "RLS") ---------- */
 const users = new Map(); // email -> { id, password }
-const tables = { bottles: [], poops: [], settings: [] };
+const tables = { biberones: [], deposiciones: [], ajustes: [] };
 const pages = new Set();
 
 let serverDown = false; // simula que la nube no responde
@@ -34,17 +34,17 @@ async function rpc(token, call) {
   }
   if (!token) return { error: { message: 'JWT expired' } };
   const t = tables[call.table];
-  const visible = () => t.filter((r) => r.user_id === token && call.filters.every(([f, v]) => String(r[f]) === String(v)));
+  const visible = () => t.filter((r) => r.usuario_id === token && call.filters.every(([f, v]) => String(r[f]) === String(v)));
   let changed = false;
   let data = null;
   if (call.action === 'select') {
-    let rows = visible().sort((a, b) => (a.at ?? 0) - (b.at ?? 0) || String(a.id).localeCompare(String(b.id)));
+    let rows = visible().sort((a, b) => (a.fecha_hora ?? 0) - (b.fecha_hora ?? 0) || String(a.id).localeCompare(String(b.id)));
     if (call.range) rows = rows.slice(call.range[0], call.range[1] + 1);
     data = call.single ? (rows[0] ?? null) : rows;
   } else if (call.action === 'upsert') {
     for (const row of call.rows) {
-      if (row.user_id !== token) return { error: { message: 'new row violates row-level security policy' } };
-      const key = call.table === 'settings' ? 'user_id' : 'id';
+      if (row.usuario_id !== token) return { error: { message: 'new row violates row-level security policy' } };
+      const key = call.table === 'ajustes' ? 'usuario_id' : 'id';
       const i = t.findIndex((r) => r[key] === row[key]);
       if (i >= 0) t[i] = { ...row }; else t.push({ ...row });
     }
@@ -148,9 +148,9 @@ await pa.getByRole('button', { name: 'Guardar biberón' }).tap();
 await pa.locator('.sheet-root').waitFor({ state: 'detached' });
 await pa.waitForFunction(() => true);
 await new Promise((r) => setTimeout(r, 400));
-assert.equal(tables.bottles.length, 1);
-assert.equal(tables.bottles[0].taken, 120);
-assert.equal(tables.bottles[0].user_id, 'u-1');
+assert.equal(tables.biberones.length, 1);
+assert.equal(tables.biberones[0].tomado_ml, 120);
+assert.equal(tables.biberones[0].usuario_id, 'u-1');
 await waitText(pa, '.sync-pill', /En la nube/);
 await pa.screenshot({ path: `${shots}/cuenta-03-hoy.png` });
 step('Biberón guardado en la nube con el usuario correcto');
@@ -178,7 +178,7 @@ await pa.getByRole('button', { name: 'Añadir biberón' }).tap();
 await pa.locator('[data-quick="90"]').tap();
 await pa.getByRole('button', { name: 'Guardar biberón' }).tap();
 await waitText(pa, '.sync-pill', /Sin conexión · 1 por subir/);
-assert.equal(tables.bottles.length, 1, 'todavía no ha llegado a la nube');
+assert.equal(tables.biberones.length, 1, 'todavía no ha llegado a la nube');
 assert.match(await pa.locator('#view-hoy .card').first().innerText(), /210 ml registrados/);
 await pa.screenshot({ path: `${shots}/cuenta-04-sin-conexion.png` });
 step('Sin conexión: se ve al momento y queda pendiente de subir');
@@ -190,12 +190,12 @@ await pa.reload();
 await pa.locator('.h-display').waitFor();
 await waitText(pa, '.sync-pill', /1 por subir/);
 assert.match(await pa.locator('#view-hoy .card').first().innerText(), /210 ml registrados/);
-assert.equal(tables.bottles.length, 1);
+assert.equal(tables.biberones.length, 1);
 step('Tras cerrar y abrir la app, lo pendiente sigue guardado en el dispositivo');
 serverDown = false;
 await pa.evaluate(() => dispatchEvent(new Event('online')));
 await waitText(pa, '.sync-pill', /En la nube/);
-assert.equal(tables.bottles.length, 2);
+assert.equal(tables.biberones.length, 2);
 await waitText(pb, '#view-hoy .card', /210 ml registrados/);
 step('Al volver la conexión se sube solo y llega al otro dispositivo');
 
@@ -204,7 +204,7 @@ await pb.locator('.timeline [data-edit="bottles"]').first().tap();
 await pb.getByRole('button', { name: 'Eliminar biberón' }).tap();
 await pb.locator('.dialog').getByRole('button', { name: 'Eliminar' }).tap();
 await waitText(pa, '#view-hoy .card', /1\s*toma/);
-assert.equal(tables.bottles.length, 1);
+assert.equal(tables.biberones.length, 1);
 step('Un borrado en la tablet desaparece también del móvil');
 
 // Ajustes compartidos

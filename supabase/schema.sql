@@ -1,77 +1,104 @@
--- Nia CV — esquema de base de datos para Supabase
--- Cómo usarlo: supabase.com → tu proyecto → SQL Editor → New query →
--- pega TODO este archivo → Run. Se puede ejecutar más de una vez sin problema.
+-- =============================================================================
+-- Nia CV — estructura de la base de datos en Supabase
+-- =============================================================================
 --
--- Seguridad: Row Level Security (RLS) activado en todas las tablas. Cada
--- usuario solo puede leer, crear, modificar y borrar SUS filas
--- (user_id = auth.uid()). La clave pública "anon" de la web no permite nada más.
+-- CÓMO USARLO
+--   1. Entra en supabase.com y abre tu proyecto.
+--   2. Menú de la izquierda → "SQL Editor" (editor de SQL) → "New query" (nueva consulta).
+--   3. Copia TODO este archivo, pégalo y pulsa "Run" (ejecutar).
+--   4. Debe aparecer "Success. No rows returned" (correcto, sin filas que mostrar).
+--   Puedes ejecutarlo más de una vez sin problema: no borra nada.
+--
+-- QUÉ CREA
+--   · biberones     → una fila por cada toma
+--   · deposiciones  → una fila por cada caca
+--   · ajustes       → una fila por cuenta (nombre del bebé, cantidades rápidas…)
+--
+-- SEGURIDAD
+--   Se activa la "seguridad por filas" (Row Level Security). Cada cuenta solo
+--   puede leer, crear, cambiar y borrar SUS propias filas. La clave pública de
+--   la web no permite nada más que eso.
+--
+-- Nota: las palabras en inglés que quedan (create table, integer, check…) son
+-- el propio lenguaje SQL y no se pueden traducir.
+-- =============================================================================
+
 
 -- Biberones -------------------------------------------------------------------
-create table if not exists public.bottles (
-  id          uuid primary key,
-  user_id     uuid not null default auth.uid() references auth.users (id) on delete cascade,
-  at          bigint not null,                       -- instante de la toma (ms desde 1970, UTC)
-  prepared    integer not null check (prepared > 0 and prepared <= 1000),
-  taken       integer not null check (taken >= 0 and taken <= 1000),
-  notes       text not null default '' check (char_length(notes) <= 500),
-  created_at  bigint not null,
-  updated_at  bigint not null,
-  constraint taken_not_above_prepared check (taken <= prepared)
+create table if not exists public.biberones (
+  id             uuid primary key,                       -- identificador único del registro
+  usuario_id     uuid not null default auth.uid()
+                 references auth.users (id) on delete cascade,  -- cuenta a la que pertenece
+  fecha_hora     bigint not null,                        -- momento de la toma (milisegundos desde 1970)
+  preparado_ml   integer not null check (preparado_ml > 0 and preparado_ml <= 1000),
+  tomado_ml      integer not null check (tomado_ml >= 0 and tomado_ml <= 1000),
+  observaciones  text not null default '' check (char_length(observaciones) <= 500),
+  creado         bigint not null,                        -- cuándo se creó el registro
+  modificado     bigint not null,                        -- última modificación
+  constraint tomado_no_supera_preparado check (tomado_ml <= preparado_ml)
 );
-create index if not exists bottles_user_at on public.bottles (user_id, at);
+create index if not exists biberones_usuario_fecha on public.biberones (usuario_id, fecha_hora);
+
 
 -- Deposiciones ----------------------------------------------------------------
-create table if not exists public.poops (
-  id          uuid primary key,
-  user_id     uuid not null default auth.uid() references auth.users (id) on delete cascade,
-  at          bigint not null,
-  consistency text not null check (consistency in ('liquida', 'blanda', 'normal', 'dura')),
-  notes       text not null default '' check (char_length(notes) <= 500),
-  created_at  bigint not null,
-  updated_at  bigint not null
+create table if not exists public.deposiciones (
+  id             uuid primary key,
+  usuario_id     uuid not null default auth.uid()
+                 references auth.users (id) on delete cascade,
+  fecha_hora     bigint not null,
+  consistencia   text not null check (consistencia in ('liquida', 'blanda', 'normal', 'dura')),
+  observaciones  text not null default '' check (char_length(observaciones) <= 500),
+  creado         bigint not null,
+  modificado     bigint not null
 );
-create index if not exists poops_user_at on public.poops (user_id, at);
+create index if not exists deposiciones_usuario_fecha on public.deposiciones (usuario_id, fecha_hora);
+
 
 -- Ajustes (nombre del bebé, cantidades rápidas…) -------------------------------
-create table if not exists public.settings (
-  user_id uuid primary key default auth.uid() references auth.users (id) on delete cascade,
-  value   jsonb not null default '{}'::jsonb
+create table if not exists public.ajustes (
+  usuario_id  uuid primary key default auth.uid()
+              references auth.users (id) on delete cascade,
+  valor       jsonb not null default '{}'::jsonb
 );
 
+
 -- Reglas de acceso: cada cuenta solo ve y toca lo suyo --------------------------
-alter table public.bottles  enable row level security;
-alter table public.poops    enable row level security;
-alter table public.settings enable row level security;
+alter table public.biberones    enable row level security;
+alter table public.deposiciones enable row level security;
+alter table public.ajustes      enable row level security;
 
-drop policy if exists "own bottles"  on public.bottles;
-drop policy if exists "own poops"    on public.poops;
-drop policy if exists "own settings" on public.settings;
+drop policy if exists "solo sus biberones"    on public.biberones;
+drop policy if exists "solo sus deposiciones" on public.deposiciones;
+drop policy if exists "solo sus ajustes"      on public.ajustes;
 
-create policy "own bottles" on public.bottles
+create policy "solo sus biberones" on public.biberones
   for all to authenticated
-  using (user_id = (select auth.uid()))
-  with check (user_id = (select auth.uid()));
+  using (usuario_id = (select auth.uid()))
+  with check (usuario_id = (select auth.uid()));
 
-create policy "own poops" on public.poops
+create policy "solo sus deposiciones" on public.deposiciones
   for all to authenticated
-  using (user_id = (select auth.uid()))
-  with check (user_id = (select auth.uid()));
+  using (usuario_id = (select auth.uid()))
+  with check (usuario_id = (select auth.uid()));
 
-create policy "own settings" on public.settings
+create policy "solo sus ajustes" on public.ajustes
   for all to authenticated
-  using (user_id = (select auth.uid()))
-  with check (user_id = (select auth.uid()));
+  using (usuario_id = (select auth.uid()))
+  with check (usuario_id = (select auth.uid()));
 
--- Cambios en vivo entre dispositivos (Realtime) -------------------------------
+
+-- Cambios en vivo entre dispositivos (lo que se apunta en el móvil aparece en
+-- la tablet sin recargar) -------------------------------------------------------
 do $$
+declare
+  tabla text;
 begin
-  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'bottles') then
-    alter publication supabase_realtime add table public.bottles;
-  end if;
-  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'poops') then
-    alter publication supabase_realtime add table public.poops;
-  end if;
-  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'settings') then
-    alter publication supabase_realtime add table public.settings;
-  end if;
+  foreach tabla in array array['biberones', 'deposiciones', 'ajustes'] loop
+    if not exists (
+      select 1 from pg_publication_tables
+      where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = tabla
+    ) then
+      execute format('alter publication supabase_realtime add table public.%I', tabla);
+    end if;
+  end loop;
 end $$;

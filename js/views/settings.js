@@ -43,7 +43,7 @@ export function openSettings() {
         const s = store.settings;
         const nB = store.all('bottles').length, nP = store.all('poops').length;
         const cloud = store.backend === 'cloud';
-        const backendLabel = { cloud: 'En la nube, en tu cuenta de Claude', indexeddb: 'En este dispositivo (IndexedDB)', localstorage: 'En este dispositivo (almacenamiento local)', memory: 'Temporal: este navegador no permite guardar' }[store.backend];
+        const backendLabel = { cloud: 'En la nube, en tu cuenta de Claude', indexeddb: 'En este dispositivo (base de datos del navegador)', localstorage: 'En este dispositivo (almacenamiento local)', memory: 'Temporal: este navegador no permite guardar' }[store.backend];
         body.innerHTML = `
         <div class="sheet-head">
           <h2 class="h-section">Ajustes</h2>
