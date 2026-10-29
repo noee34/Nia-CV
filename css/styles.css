@@ -75,6 +75,26 @@
     color-scheme: dark;
   }
 }
+:root[data-theme="dark"] {
+    --bg: #1D1916;
+    --surface: #27221E;
+    --surface-2: #302A25;
+    --ink: #F1E9DF;
+    --ink-soft: #CDBFB2;
+    --muted: #A69585;
+    --line: rgba(232, 222, 209, .1);
+    --line-strong: rgba(232, 222, 209, .2);
+    --blue-wash: #2B3740;
+    --terra-wash: #3D2D27;
+    --sage-wash: #2E332B;
+    --accent-ink: #B8D7E8;
+    --primary: #E8DED1;
+    --on-primary: #26201C;
+    --danger: #E3A08A;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .25);
+    --shadow-lift: 0 12px 40px -12px rgba(0, 0, 0, .6);
+    color-scheme: dark;
+}
 
 /* Dynamic Type: en iOS, `-apple-system-body` respeta el tamaño de texto elegido en Ajustes. */
 html { font: -apple-system-body; -webkit-text-size-adjust: 100%; }
@@ -105,7 +125,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; }
 /* ---------- Estructura ---------- */
 .app { max-width: 540px; margin: 0 auto; min-height: 100dvh; position: relative; }
 .view {
-  padding: calc(var(--safe-t) + 14px) var(--gutter) calc(var(--tabbar-h) + var(--safe-b) + 40px);
+  padding: calc(var(--view-safe-t, var(--safe-t)) + 14px) var(--gutter) calc(var(--tabbar-h) + var(--safe-b) + 40px);
   animation: fade-in .35s ease both;
 }
 .view[hidden] { display: none; }

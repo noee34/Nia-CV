@@ -206,9 +206,10 @@ async function boot() {
   state.tab = TABS[location.hash.slice(1)] ? location.hash.slice(1) : 'hoy';
   render();
   document.documentElement.classList.add('ready');
-  if (store.backend === 'memory') toast('Este navegador no permite guardar datos. Usa Safari normal, no privado.');
+  if (store.cloudExpected && store.backend !== 'cloud') toast('Sin conexión con la nube: los cambios se guardan solo en este dispositivo.');
+  else if (store.backend === 'memory') toast('Este navegador no permite guardar datos. Usa Safari normal, no privado.');
 
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  if ('serviceWorker' in navigator && location.protocol !== 'file:' && !store.cloudExpected) {
     navigator.serviceWorker.register('./sw.js').catch((err) => console.warn('SW', err));
   }
 }

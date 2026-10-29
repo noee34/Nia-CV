@@ -69,6 +69,89 @@ class LocalStorageAdapter {
   async setMeta(k, v) { const o = this.read('meta'); o[k] = v; this.write('meta', o); }
 }
 
+/**
+ * Nube: base de datos del artifact de claude.ai (capacidad `db`).
+ * Un documento por mes (`months/2026-10`) con mapas { bottles: {id: registro}, poops: {...} }.
+ * Así una familia cabe holgadamente en los límites del almacén y cada cambio
+ * sólo toca su propio registro (fusión anidada), sin pisar lo que escribe otro
+ * dispositivo a la vez. Un registro borrado queda como `null` en su mes.
+ */
+export class CloudAdapter {
+  constructor(db) {
+    this.db = db;
+    this.where = new Map(); // id -> mes donde está guardado
+    this.cache = { bottles: [], poops: [] };
+  }
+  async open() { this.ingest((await this.db.collection('months').get()).docs); }
+  ingest(docs) {
+    const out = { bottles: [], poops: [] };
+    this.where.clear();
+    for (const d of docs) {
+      const body = d.data() || {};
+      for (const t of TYPES) {
+        for (const [id, r] of Object.entries(body[t] || {})) {
+          if (r) { out[t].push(r); this.where.set(id, d.id); }
+        }
+      }
+    }
+    this.cache = out;
+  }
+  async getAll(t) { return this.cache[t].slice(); }
+  monthOf(at) { const d = new Date(at); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; }
+  /** Fusiona { [type]: patch } en el mes; crea el documento si aún no existe. */
+  async merge(month, type, patch) {
+    const ref = this.db.doc(`months/${month}`);
+    try {
+      await ref.update({ [type]: patch });
+    } catch (e) {
+      if (e?.code !== 'invalid_argument') throw e;
+      const snap = await ref.get();
+      if (snap.exists) throw e;
+      await ref.set({ bottles: {}, poops: {}, [type]: patch });
+    }
+  }
+  async put(type, rec) {
+    const m = this.monthOf(rec.at);
+    const old = this.where.get(rec.id);
+    await this.merge(m, type, { [rec.id]: rec });
+    if (old && old !== m) await this.merge(old, type, { [rec.id]: null });
+    this.where.set(rec.id, m);
+  }
+  async putMany(type, recs) {
+    const byMonth = new Map();
+    for (const r of recs) {
+      const m = this.monthOf(r.at);
+      if (!byMonth.has(m)) byMonth.set(m, {});
+      byMonth.get(m)[r.id] = r;
+    }
+    for (const [m, patch] of byMonth) {
+      await this.merge(m, type, patch);
+      for (const id of Object.keys(patch)) this.where.set(id, m);
+    }
+  }
+  async delete(type, id) {
+    const m = this.where.get(id);
+    if (m) await this.merge(m, type, { [id]: null });
+    this.where.delete(id);
+  }
+  async clear(type) {
+    const snap = await this.db.collection('months').get();
+    for (const d of snap.docs) {
+      const body = { ...(d.data() || {}) };
+      body[type] = {};
+      if (!Object.values(body.bottles || {}).some(Boolean) && !Object.values(body.poops || {}).some(Boolean)) await this.db.doc(`months/${d.id}`).delete();
+      else await this.db.doc(`months/${d.id}`).set(body);
+    }
+  }
+  async getMeta(key) { const s = await this.db.doc(`meta/${key}`).get(); return s.exists ? s.data().value : undefined; }
+  async setMeta(key, value) { await this.db.doc(`meta/${key}`).set({ value }); }
+  /** Cambios en vivo hechos desde otros dispositivos. */
+  subscribe({ onRecords, onSettings, onError }) {
+    this.db.collection('months').onSnapshot((snap) => { this.ingest(snap.docs); onRecords(); }, onError);
+    this.db.doc('meta/settings').onSnapshot((s) => { if (s.exists) onSettings(s.data().value); }, onError);
+  }
+}
+
 /** Memoria volátil: último recurso para que la app no se rompa (se avisa al usuario). */
 class MemoryAdapter extends LocalStorageAdapter {
   constructor() { super(); this.mem = {}; }
@@ -94,7 +177,12 @@ class Store {
   }
 
   async init() {
+    // Dentro de claude.ai el diario vive en la nube y se comparte entre dispositivos.
+    this.cloudExpected = typeof globalThis.claude?.use === 'function';
+    let cloudDb = null;
+    if (this.cloudExpected) { try { cloudDb = await globalThis.claude.use('db'); } catch { cloudDb = null; } }
     const candidates = [['indexeddb', () => new IDBAdapter()], ['localstorage', () => new LocalStorageAdapter()], ['memory', () => new MemoryAdapter()]];
+    if (cloudDb) candidates.unshift(['cloud', () => new CloudAdapter(cloudDb)]);
     for (const [name, make] of candidates) {
       try {
         if (name === 'indexeddb' && !('indexedDB' in globalThis)) continue;
@@ -108,6 +196,13 @@ class Store {
     for (const t of TYPES) this.data[t] = await this.adapter.getAll(t);
     const saved = await this.adapter.getMeta('settings');
     this.settings = { ...DEFAULT_SETTINGS, ...(saved || {}) };
+    if (this.adapter.subscribe) {
+      this.adapter.subscribe({
+        onRecords: () => { for (const t of TYPES) this.data[t] = this.adapter.cache[t].slice(); this.emit(); },
+        onSettings: (v) => { this.settings = { ...DEFAULT_SETTINGS, ...(v || {}) }; this.emit(); },
+        onError: (e) => console.warn('Sincronización detenida', e),
+      });
+    }
     // Pide al navegador que no borre los datos por falta de espacio.
     try { this.persisted = await navigator.storage?.persist?.(); } catch { this.persisted = false; }
   }

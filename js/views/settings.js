@@ -11,6 +11,13 @@ const INTERVALS = [[0, 'Sin referencia'], [120, 'Cada 2 h'], [150, 'Cada 2 h 30'
 
 /** Comparte el archivo (hoja de compartir de iOS) o, si no se puede, lo descarga. */
 async function deliverFile(name, content, type) {
+  // Dentro de claude.ai las descargas pasan por la capacidad `downloads`.
+  if (typeof globalThis.claude?.use === 'function') {
+    const dl = await globalThis.claude.use('downloads').catch(() => null);
+    if (!dl) { toast('Las descargas no están disponibles aquí'); return false; }
+    try { await dl.save({ filename: name, data: content }); return true; }
+    catch (e) { if (e?.code !== 'declined') toast('No se pudo preparar el archivo'); return false; }
+  }
   const blob = new Blob([content], { type });
   const file = new File([blob], name, { type });
   if (navigator.canShare?.({ files: [file] })) {
@@ -33,7 +40,8 @@ export function openSettings() {
       const draw = () => {
         const s = store.settings;
         const nB = store.all('bottles').length, nP = store.all('poops').length;
-        const backendLabel = { indexeddb: 'En este dispositivo (IndexedDB)', localstorage: 'En este dispositivo (almacenamiento local)', memory: 'Temporal: este navegador no permite guardar' }[store.backend];
+        const cloud = store.backend === 'cloud';
+        const backendLabel = { cloud: 'En la nube, en tu cuenta de Claude', indexeddb: 'En este dispositivo (IndexedDB)', localstorage: 'En este dispositivo (almacenamiento local)', memory: 'Temporal: este navegador no permite guardar' }[store.backend];
         body.innerHTML = `
         <div class="sheet-head">
           <h2 class="h-section">Ajustes</h2>
@@ -68,12 +76,15 @@ export function openSettings() {
 
         <div class="eyebrow" style="margin-top:22px">Privacidad</div>
         <div class="card prose" style="margin-top:10px">
-          <p><strong>Tus registros no salen de este iPhone.</strong> Nia CV no tiene cuentas, servidores, analíticas ni publicidad, y no envía datos a terceros.</p>
+          ${cloud ? `<p><strong>Tus registros se guardan en la nube, dentro de esta página privada de claude.ai.</strong> Puedes abrirla desde cualquier dispositivo con tu cuenta de Claude, y los cambios se sincronizan al momento.</p>
+          <p>Solo tú tienes acceso, salvo que la compartas desde el menú Compartir. Para que otra persona (por ejemplo, la otra mamá o el otro papá) pueda registrar, compártela con ella como Colaborador o Editor.</p>
+          <p>Nia CV no tiene analíticas ni publicidad y no envía tus datos a ningún otro servicio. Los registros solo salen de aquí si exportas un CSV o una copia de seguridad.</p>
+          <p>Necesita conexión a Internet. Si borras esta página de claude.ai, se borran también sus registros: haz copias de seguridad de vez en cuando.</p>` : `<p><strong>Tus registros no salen de este iPhone.</strong> Nia CV no tiene cuentas, servidores, analíticas ni publicidad, y no envía datos a terceros.</p>
           <p>Se guardan en el almacenamiento privado de la app en este dispositivo: ${esc(backendLabel)}${store.persisted ? ', marcado como persistente' : ''}. Funcionan sin conexión.</p>
           <p>Sólo salen del dispositivo si tú exportas un CSV o una copia de seguridad y decides dónde guardarla o con quién compartirla.</p>
           <p>Si borras la app de la pantalla de inicio o los datos del sitio en Safari, los registros se eliminan. Haz copias de seguridad de vez en cuando.</p>
           <h4>Sincronización</h4>
-          <p>Esta versión no sincroniza. Los datos ya usan identificadores únicos y fecha de modificación para poder sincronizarse de forma segura en el futuro, siempre con tu autorización explícita.</p>
+          <p>Esta versión no sincroniza. Los datos ya usan identificadores únicos y fecha de modificación para poder sincronizarse de forma segura en el futuro, siempre con tu autorización explícita.</p>`}
         </div>
 
         <div class="foot">${logo()}<div>Versión ${APP_VERSION} · Hecho con cariño ${paw(10)}</div>

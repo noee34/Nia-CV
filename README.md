@@ -11,6 +11,27 @@ Funciona sin conexión, no necesita cuenta y guarda los datos sólo en el dispos
 
 ---
 
+## 0. Versión en la nube (cualquier dispositivo con Internet)
+
+Nia CV está publicada como página privada de claude.ai:
+**https://claude.ai/artifact/VbZjPjZUgSSML29PVVnZaJ**
+
+- Se abre en cualquier móvil, tablet u ordenador con tu sesión de Claude iniciada.
+- Los registros se guardan en la base de datos de esa página y se sincronizan al momento
+  entre dispositivos (si el móvil y la tablet están abiertos, los cambios aparecen en ambos).
+- Es privada: solo tú puedes abrirla. Para que otra persona registre tomas, compártela desde
+  el menú **Compartir** como Colaborador o Editor.
+- Necesita conexión. Sin cuenta de Claude o fuera de claude.ai, la app funciona en modo local
+  (IndexedDB) como se describe abajo.
+- Para pasar datos de la versión local a la nube: en la local, *Ajustes → Crear copia de
+  seguridad*; en la nube, *Ajustes → Restaurar copia* (se fusiona sin duplicados).
+
+Detalle técnico: `CloudAdapter` en `js/store.js` guarda un documento por mes
+(`months/AAAA-MM`) con mapas `{ bottles: {id: registro}, poops: {...} }`. Cada cambio fusiona
+solo su propio registro, así que dos dispositivos que escriben a la vez no se pisan. Los
+borrados quedan como `null`. `claude.html` es la página que se publica; `index.html` es la
+versión PWA local. Pruebas: `tests/cloud.test.mjs`.
+
 ## 1. Instalarla en el iPhone (≈ 5 minutos)
 
 La app tiene que estar publicada en una dirección **HTTPS** para que el iPhone la guarde
