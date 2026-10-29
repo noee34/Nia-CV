@@ -29,12 +29,13 @@ borran en cascada).
 ## Qué NO hace la app
 - En la versión sin cuenta, no envía tus registros a ningún servidor.
 - En la versión con cuenta, solo los envía a la base de datos de Supabase descrita arriba.
-- No incluye analíticas, cookies de seguimiento, publicidad ni SDK de terceros.
+- No incluye analíticas, cookies de seguimiento ni publicidad. La única librería externa es
+  el cliente oficial de Supabase (en la versión con cuenta), incluido en la propia app.
 - No carga recursos externos: las fuentes e ilustraciones van incluidas en la propia app.
 
-El único contacto con Internet es la descarga de los archivos de la propia aplicación
-desde la dirección donde está publicada (y sus actualizaciones). Esos archivos no contienen
-ni transmiten tus datos.
+Conexiones a Internet: la descarga de los archivos de la propia aplicación desde la
+dirección donde está publicada y, solo en la versión con cuenta, la comunicación cifrada
+con Supabase para iniciar sesión y guardar o leer tus registros.
 
 ## Exportaciones y copias de seguridad
 Si usas “Exportar registros (CSV)” o “Crear copia de seguridad”, se genera un archivo en tu
