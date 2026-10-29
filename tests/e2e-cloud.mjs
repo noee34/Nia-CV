@@ -207,15 +207,38 @@ await waitText(pa, '#view-hoy .card', /1\s*toma/);
 assert.equal(tables.biberones.length, 1);
 step('Un borrado en la tablet desaparece también del móvil');
 
-// Ajustes compartidos
+// La cuenta aparece en Ajustes
 await pa.getByRole('button', { name: 'Ajustes' }).tap();
 assert.match(await pa.locator('.sheet').innerText(), /familia@example\.com/);
-await pa.fill('input[name="babyName"]', 'Nia Carmen');
-await pa.locator('input[name="babyName"]').press('Enter');
-await pa.locator('input[name="babyName"]').blur();
 await pa.screenshot({ path: `${shots}/cuenta-05-ajustes.png` });
+await pa.getByRole('button', { name: 'Cerrar' }).first().tap();
+await pa.locator('.sheet-root').waitFor({ state: 'detached' });
+
+// Datos personales (pestaña Nia) se sincronizan
+await pa.getByRole('tab', { name: 'Nia' }).tap();
+await pa.getByRole('button', { name: 'Editar datos de Nia' }).tap();
+await pa.fill('input[name="name"]', 'Nia Carmen');
+await pa.getByRole('radio', { name: '0+' }).tap();
+await pa.getByRole('button', { name: 'Guardar datos' }).tap();
+await pa.locator('.sheet-root').waitFor({ state: 'detached' });
 await waitText(pb, '.h-display', /Nia Carmen, hoy/);
-step('Los ajustes (nombre) se sincronizan');
+assert.equal(tables.ajustes[0].valor.bloodType, '0+');
+step('Los datos personales (nombre y grupo sanguíneo) se sincronizan');
+
+// Álbum: lo guardado en el móvil llega a la tablet
+await pa.locator('[data-album="0"]').tap();
+await pa.fill('textarea[name="notes"]', 'Bienvenida al mundo');
+await pa.getByRole('button', { name: 'Guardar en el álbum' }).tap();
+await pa.locator('.sheet-root').waitFor({ state: 'detached' });
+await waitText(pa, '#view-nia [data-album="0"]', /Nacimiento/);
+assert.equal(tables.album.length, 1);
+assert.equal(tables.album[0].nota, 'Bienvenida al mundo');
+assert.equal(tables.album[0].mes, 0);
+await pb.getByRole('tab', { name: 'Nia' }).tap();
+await pb.waitForFunction(async () => (await import('/js/store.js')).store.all('album').length === 1, null, { timeout: 8000 });
+await pa.getByRole('tab', { name: 'Hoy' }).tap();
+await pb.getByRole('tab', { name: 'Hoy' }).tap();
+step('El álbum se guarda en la nube y llega al otro dispositivo');
 
 // Cerrar sesión
 await pb.getByRole('button', { name: 'Ajustes' }).tap();
