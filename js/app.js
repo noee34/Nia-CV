@@ -19,6 +19,8 @@ import { openSettings, askJoin } from './views/settings.js';
 import { renderProfile, openProfileForm, openAlbumMonth, setHeaderPhoto, removeHeaderPhoto } from './views/profile.js';
 import { renderMedicine, openCitaForm, openSpecialistName, addToPhoneCalendar } from './views/medicine.js';
 import { upcoming, dueReminders, citaTitle, reminderLabel } from './medical.js';
+import { openMedForm, giveDose, undoDose, showDoseAlert, addMedsToCalendar, openWhatsAppEditor } from './views/meds-view.js';
+import { dueDoses } from './meds.js';
 
 const TABS = {
   hoy: { label: 'Hoy', icon: icons.home, render: renderToday },
@@ -43,6 +45,7 @@ const state = {
   diaryWeek: weekStart(today0),
   diaryMonth: ym(today0),
   diarySelected: today0,
+  medTab: 'citas',
   medSection: 'medico',
   medFilter: 'all',
   medMonth: ym(today0),
@@ -140,6 +143,9 @@ document.addEventListener('click', (e) => {
       'add-poop-day': () => openPoopForm({ forDay: state.poopsSelected }),
       'bottle-calendar': openBottleCalendar,
       'poops-more': () => { state.poopLimit += 40; render(); },
+      'add-med': () => openMedForm(),
+      'med-cal-all': () => addMedsToCalendar(store.all('meds')),
+      'edit-wa': openWhatsAppEditor,
       'add-cita': () => openCitaForm({ section: state.medSection, kind: state.medSection === 'medico' && state.medFilter !== 'all' ? state.medFilter : null }),
       'add-cita-day': () => openCitaForm({ section: state.medSection, forDay: state.medSelected }),
       'rename-specialist': openSpecialistName,
@@ -151,6 +157,15 @@ document.addEventListener('click', (e) => {
     };
     return actions[action]?.();
   }
+
+  const give = t.closest('[data-give-dose]');
+  if (give) return giveDose(give.dataset.giveDose);
+  const undo = t.closest('[data-undo-dose]');
+  if (undo) return undoDose(undo.dataset.undoDose);
+  const med = t.closest('[data-med]');
+  if (med) { const rec = store.get('meds', med.dataset.med); if (rec) openMedForm({ record: rec }); return; }
+  const mtab = t.closest('[data-med-tab]');
+  if (mtab) { state.medTab = mtab.dataset.medTab; render(); return; }
 
   const cita = t.closest('[data-cita]');
   if (cita) { const rec = store.get('citas', cita.dataset.cita); if (rec) openCitaForm({ record: rec }); return; }
@@ -250,8 +265,23 @@ function relativeDayLabelShort(ms) {
   return new Date(ms).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
 }
 
+/* ---------- Aviso de medicación al llegar la hora ---------- */
+const MED_KEY = 'nia-cv:medicacion-avisos-hasta';
+const medShown = new Set();
+function checkMedReminders() {
+  const now = Date.now();
+  let from;
+  try { from = Number(localStorage.getItem(MED_KEY)) || now - 60000; } catch { from = now - 60000; }
+  from = Math.max(from, now - 12 * 3600000); // al abrir la app, las de las últimas 12 horas sin dar
+  const due = dueDoses(store.all('meds'), store.all('medlog'), from, now).filter((d) => !medShown.has(d.key));
+  try { localStorage.setItem(MED_KEY, String(now)); } catch { /* nada */ }
+  if (!due.length || document.querySelector('.dialog-root, .sheet-root')) return;
+  due.forEach((d) => medShown.add(d.key));
+  showDoseAlert(due);
+}
+
 function tick() {
-  if (started) checkReminders();
+  if (started) { checkMedReminders(); checkReminders(); }
   const now = dayKey();
   if (now !== state.today) {
     const old = state.today;
@@ -281,7 +311,7 @@ function start() {
   state.tab = TABS[location.hash.slice(1)] ? location.hash.slice(1) : 'hoy';
   started = true;
   render();
-  setTimeout(checkReminders, 1500);
+  setTimeout(() => { checkMedReminders(); checkReminders(); }, 1500);
   document.documentElement.classList.add('ready');
 }
 

@@ -6,6 +6,7 @@ import { balloonScene, photoFrame, pupIcon } from '../characters.js';
 import { openSheet, confirmDialog, toast, esc, $ } from '../ui.js';
 import { dayKey, addMonths, monthsBetween, ageText, fmtLongDate, fmtShortDate, cap } from '../dates.js';
 import { photoFromFile } from '../photo.js';
+import { whatsappCard } from './meds-view.js';
 
 export const BLOOD_TYPES = ['A+', 'A−', 'B+', 'B−', 'AB+', 'AB−', '0+', '0−'];
 const MONTHS = Array.from({ length: 13 }, (_, i) => i); // 0 = nacimiento … 12 = primer año
@@ -70,6 +71,8 @@ export function renderProfile() {
       ${row(icons.chart({ size: 17 }), 'Talla', s.heightCm ? fmtHeight(s.heightCm) + (s.heightDate ? ` · ${fmtShortDate(s.heightDate)}` : '') : '')}
     </div>
   </section>
+
+  ${whatsappCard()}
 
   <section class="section" aria-labelledby="al-h">
     <div class="section-head"><h2 class="h-section" id="al-h">Álbum del primer año</h2><span class="subtle">${done} de 13 fotos</span></div>

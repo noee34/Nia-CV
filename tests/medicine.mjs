@@ -24,7 +24,7 @@ const tomorrow = await page.evaluate(() => { const d = new Date(Date.now() + 864
 
 await page.goto(URL + '#medicina');
 await page.locator('#view-medicina .scene-banner svg.scene').waitFor();
-assert.match(await page.locator('#view-medicina .segmented').innerText(), /Médico[\s\S]*Especialista · Angela/);
+assert.match(await page.locator('#view-medicina .segmented:not(.med-tabs)').innerText(), /Médico[\s\S]*Especialista · Angela/);
 assert.match(await page.locator('#view-medicina').innerText(), /No hay citas próximas/);
 step('Pestaña Medicina con escena, secciones Médico y Especialista · Angela');
 

@@ -666,3 +666,38 @@ button, .chip, .quick button, .cons-opt, .step, label.btn { touch-action: manipu
 .next-cita { width: 100%; display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; text-align: left; padding: 16px 18px; margin-bottom: 14px; }
 .next-cita-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .next-cita-title { font-family: var(--serif); font-size: 1.3rem; font-weight: 500; line-height: 1.15; overflow-wrap: anywhere; }
+
+/* ---------- Medicación ---------- */
+.med-tabs button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.meds-card { padding: 18px 18px 8px; margin-bottom: 14px; }
+.meds-card.urgent { border-color: var(--terra); box-shadow: 0 0 0 3px var(--terra-wash), var(--shadow); }
+.meds-alert { display: flex; gap: 10px; align-items: flex-start; margin: -4px -4px 12px; padding: 10px 12px; border-radius: 14px; background: var(--terra-wash); color: var(--ink); font-size: .9rem; }
+.meds-alert svg { color: var(--danger); flex: none; margin-top: 2px; }
+.dose-list .dose-row { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.dose-list .dose-row:first-child { border-top: 0; }
+.dose-time { font-family: var(--serif); font-size: 1.35rem; font-weight: 600; font-variant-numeric: lining-nums tabular-nums; min-width: 3.1em; }
+.dose-main { display: flex; flex-direction: column; min-width: 0; }
+.dose-name { font-weight: 600; overflow-wrap: anywhere; }
+.dose-meta { font-size: .8rem; color: var(--muted); }
+.dose-row.ahora .dose-meta { color: var(--accent-ink); font-weight: 600; }
+.dose-row.retrasada .dose-meta { color: var(--danger); font-weight: 600; }
+.dose-row.dada .dose-name { color: var(--ink-soft); }
+.dose-row.dada .dose-meta { color: #5E7A57; }
+.dose-actions { display: flex; align-items: center; gap: 4px; }
+.dose-actions .btn-sm { min-height: 38px; padding: 0 14px; }
+.wa-btn { color: #3F8C55; }
+.dose-done { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: var(--sage-wash); color: #4E6B48; }
+.med-card { width: 100%; display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; text-align: left; padding: 16px; }
+.med-card + .med-card { margin-top: 10px; }
+.med-card.paused { opacity: .6; }
+.med-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.med-name { font-family: var(--serif); font-size: 1.3rem; font-weight: 500; line-height: 1.15; }
+.med-times { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 2px; }
+.med-times .pill { padding: 3px 10px; font-size: .76rem; }
+.med-times .pill svg { width: 13px; height: 13px; }
+.times-list .chip button { width: 24px; height: 24px; display: grid; place-items: center; color: var(--muted); }
+.wa-bubble { margin-top: 10px; padding: 12px 14px; border-radius: 16px 16px 16px 4px; background: #DCF3D8; color: #1F3A24; font-size: .92rem; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
+:root[data-theme="dark"] .wa-bubble { background: #2E4A33; color: #E3F3DF; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .wa-bubble { background: #2E4A33; color: #E3F3DF; } }
+.dose-alert-icon { display: flex; justify-content: center; margin-bottom: 4px; }
+.dialog .btn-whatsapp { width: 100%; margin-top: 8px; }

@@ -36,7 +36,7 @@ export function toCSV(bottles, poops) {
   return '﻿' + [header.join(';'), ...rows].join('\r\n');
 }
 
-export function toBackup({ bottles, poops, album = [], citas = [], settings }) {
+export function toBackup({ bottles, poops, album = [], citas = [], meds = [], medlog = [], settings }) {
   return {
     format: BACKUP_FORMAT,
     version: BACKUP_VERSION,
@@ -46,6 +46,8 @@ export function toBackup({ bottles, poops, album = [], citas = [], settings }) {
     poops,
     album,
     citas,
+    meds,
+    medlog,
   };
 }
 
@@ -59,7 +61,7 @@ export function parseBackup(text) {
   const okPoop = (r) => r && typeof r.id === 'string' && Number.isFinite(r.at) && CONSISTENCIES[r.consistency];
   const okAlbum = (r) => r && typeof r.id === 'string' && Number.isInteger(r.month) && r.month >= 0 && r.month <= 12;
   const okCita = (r) => r && typeof r.id === 'string' && Number.isFinite(r.at) && typeof r.kind === 'string';
-  return { ...data, bottles: data.bottles.filter(okBottle), poops: data.poops.filter(okPoop), album: (data.album || []).filter(okAlbum), citas: (data.citas || []).filter(okCita) };
+  return { ...data, bottles: data.bottles.filter(okBottle), poops: data.poops.filter(okPoop), album: (data.album || []).filter(okAlbum), citas: (data.citas || []).filter(okCita), meds: (data.meds || []).filter((r) => r && typeof r.id === 'string' && Array.isArray(r.times)), medlog: (data.medlog || []).filter((r) => r && typeof r.id === 'string' && typeof r.dose === 'string') };
 }
 
 /** Fusiona por id; si existe en ambos lados gana el `updatedAt` más reciente. */

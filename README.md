@@ -230,6 +230,20 @@ ninguna serie. Las fuentes son de uso libre (SIL OFL, licencias en `fonts/`).
   estaba cerrada).
 - Tabla `citas` en Supabase (`supabase/citas.sql`), compartida con la familia.
 
+### Medicación (pestaña Medicina → Medicación)
+
+- Medicamentos y vitaminas con dosis, **horas de toma**, desde/hasta y notas; se pueden pausar.
+- **Hoy** muestra la *Medicación de hoy* con su estado (pendiente, toca ahora, sin dar,
+  dada y quién la dio), con botones **Dar ✓** y **WhatsApp**.
+- **Aviso al llegar la hora** (con la app abierta, y al abrirla los de las últimas 12 h):
+  *Marcar como dada*, *Enviar por WhatsApp* o *Más tarde*.
+- **WhatsApp**: abre el mensaje ya escrito (WhatsApp no permite enviarlo solo). El texto,
+  con huecos {bebe}, {medicamento}, {dosis}, {hora} y {tipo}, y un teléfono opcional se
+  editan en la pestaña Nia → *Mensaje de WhatsApp*.
+- **Alarmas con la app cerrada**: *Añadir alarmas al Calendario* crea un evento diario por
+  cada hora de toma (hora local fija, también tras el cambio de hora) con aviso a la hora.
+- Tablas `medicacion` y `medicacion_tomas` (`supabase/medicacion.sql`), compartidas con la familia.
+
 ## 7. Privacidad
 Ver [`PRIVACY.md`](PRIVACY.md). En resumen: sin cuentas, sin servidores, sin analíticas;
 los datos sólo salen del iPhone si tú exportas un archivo.

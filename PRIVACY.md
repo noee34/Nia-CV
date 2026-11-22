@@ -12,6 +12,8 @@ para que tus datos sean sólo tuyos.
 - Tus preferencias (cantidades rápidas, referencia de próximo biberón).
 - Si los indicas, datos personales del bebé: fecha de nacimiento, grupo sanguíneo y talla.
 - Si las apuntas, citas médicas del bebé (tipo, fecha, profesional, lugar, notas y avisos).
+- Si la apuntas, su medicación o vitaminas (nombre, dosis, horas, fechas) y qué tomas se
+  marcaron como dadas y por quién; y, si lo indicas, el texto y el teléfono para WhatsApp.
 - Si las eliges, una foto de cabecera y las fotos del álbum mes a mes (con su nota),
   reducidas en el propio dispositivo antes de guardarlas.
 

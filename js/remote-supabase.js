@@ -9,9 +9,17 @@ const PAGE = 1000; // Supabase devuelve como máximo 1000 filas por petición
 const CHUNK = 500;
 
 /** Tabla de Supabase para cada tipo de registro de la app. */
-export const TABLE = { bottles: 'biberones', poops: 'deposiciones', album: 'album', citas: 'citas' };
+export const TABLE = { bottles: 'biberones', poops: 'deposiciones', album: 'album', citas: 'citas', meds: 'medicacion', medlog: 'medicacion_tomas' };
 
 const MAP = {
+  meds: {
+    to: (r) => ({ id: r.id, nombre: r.name, tipo: r.type, dosis: r.dose || '', horas: r.times || [], desde: r.startDate, hasta: r.endDate || null, pausada: Boolean(r.paused), observaciones: r.notes || '', fecha_hora: r.at, creado: r.createdAt, modificado: r.updatedAt }),
+    from: (x) => ({ id: x.id, name: x.nombre, type: x.tipo, dose: x.dosis || '', times: x.horas || [], startDate: x.desde, endDate: x.hasta || null, paused: Boolean(x.pausada), notes: x.observaciones || '', at: Number(x.fecha_hora), createdAt: Number(x.creado), updatedAt: Number(x.modificado) }),
+  },
+  medlog: {
+    to: (r) => ({ id: r.id, medicacion_id: r.medId, toma: r.dose, fecha_hora: r.at, dada_a_las: r.givenAt, dada_por: r.by || '', creado: r.createdAt, modificado: r.updatedAt }),
+    from: (x) => ({ id: x.id, medId: x.medicacion_id, dose: x.toma, at: Number(x.fecha_hora), givenAt: Number(x.dada_a_las), by: x.dada_por || '', createdAt: Number(x.creado), updatedAt: Number(x.modificado) }),
+  },
   citas: {
     to: (r) => ({ id: r.id, fecha_hora: r.at, seccion: r.section, tipo: r.kind, titulo: r.title || '', profesional: r.doctor || '', lugar: r.place || '', observaciones: r.notes || '', avisos: r.reminders || [], hecha: Boolean(r.done), creado: r.createdAt, modificado: r.updatedAt }),
     from: (x) => ({ id: x.id, at: Number(x.fecha_hora), section: x.seccion, kind: x.tipo, title: x.titulo || '', doctor: x.profesional || '', place: x.lugar || '', notes: x.observaciones || '', reminders: (x.avisos || []).map(Number), done: Boolean(x.hecha), createdAt: Number(x.creado), updatedAt: Number(x.modificado) }),
@@ -79,7 +87,7 @@ export class SupabaseRemote {
   onChange(cb) {
     const filter = `usuario_id=eq.${this.userId}`;
     const ch = this.client.channel(`nia-${this.userId}`);
-    for (const table of ['biberones', 'deposiciones', 'album', 'citas', 'ajustes']) {
+    for (const table of ['biberones', 'deposiciones', 'album', 'citas', 'medicacion', 'medicacion_tomas', 'ajustes']) {
       ch.on('postgres_changes', { event: '*', schema: 'public', table, filter }, cb);
     }
     ch.subscribe();

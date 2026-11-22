@@ -6,6 +6,7 @@ import { medicalScene, pupIcon } from '../characters.js';
 import { calendarHTML, openSheet, confirmDialog, toast, esc, $, $$ } from '../ui.js';
 import { dayKey, combineLocal, toDateInput, toTimeInput, fmtTime, fmtLongDate, fmtShortDate, relativeDayLabel, cap } from '../dates.js';
 import { groupByDay } from '../stats.js';
+import { renderMedsSection } from './meds-view.js';
 import {
   SECTIONS, KINDS, DEFAULT_SPECIALIST, REMINDERS, DEFAULT_REMINDERS, reminderLabel,
   upcoming, past, citaTitle, validateCita, toICS,
@@ -63,7 +64,12 @@ export function renderMedicine(state) {
   </header>
   <div class="scene-banner small">${medicalScene()}</div>
 
-  <div class="segmented" role="tablist" aria-label="Sección">
+  <div class="segmented med-tabs" role="tablist" aria-label="Apartado">
+    <button role="tab" aria-selected="${state.medTab !== 'medicacion'}" class="${state.medTab !== 'medicacion' ? 'on' : ''}" data-med-tab="citas">${icons.calendar({ size: 16 })} Citas</button>
+    <button role="tab" aria-selected="${state.medTab === 'medicacion'}" class="${state.medTab === 'medicacion' ? 'on' : ''}" data-med-tab="medicacion">${icons.pill({ size: 16 })} Medicación</button>
+  </div>
+  ${state.medTab === 'medicacion' ? renderMedsSection() : `
+  <div class="segmented" role="tablist" aria-label="Sección" style="margin-top:12px">
     ${Object.entries(SECTIONS).map(([id, s]) => `<button role="tab" aria-selected="${section === id}" class="${section === id ? 'on' : ''}" data-med-section="${id}">${id === 'especialista' ? `${s.label} · ${esc(specialistName())}` : s.label}</button>`).join('')}
   </div>
 
@@ -108,7 +114,7 @@ export function renderMedicine(state) {
 
   <div class="dock"><div class="dock-inner">
     <button class="btn btn-primary" data-action="add-cita">${icons.plus({ size: 18 })} Nueva cita</button>
-  </div></div>`;
+  </div></div>`}`;
 }
 
 /* ------------------------------------------------------------------ */

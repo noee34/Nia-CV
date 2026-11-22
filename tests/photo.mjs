@@ -4,6 +4,12 @@ import { createRequire } from 'node:module';
 import assert from 'node:assert/strict';
 const { chromium, devices } = createRequire(import.meta.url)('playwright');
 const URL = process.env.APP_URL || 'http://localhost:5173/';
+// Fechas calculadas desde hoy (antes eran fijas y la prueba caducaba con el tiempo)
+process.env.TZ = 'Europe/Madrid';
+const { dayKey, addDays, addMonths, ageText, fmtShortDate, fmtLongDate } = await import('../js/dates.js');
+const today = dayKey();
+const birth = addDays(addMonths(today, -3), -5);
+const age = ageText(birth, today);
 const shots = process.argv[2] || 'docs/screenshots';
 const step = (m) => console.log('✓', m);
 
@@ -37,7 +43,7 @@ step('Pestaña Nia: 13 huecos de álbum (nacimiento + 12 meses)');
 
 // Datos personales
 await page.getByRole('button', { name: 'Editar datos de Nia' }).tap();
-await page.fill('input[name="birth"]', '2026-07-24');
+await page.fill('input[name="birth"]', birth);
 await page.getByRole('radio', { name: 'A+' }).tap();
 await page.fill('input[name="height"]', '200');
 await page.getByRole('button', { name: 'Guardar datos' }).tap();
@@ -47,16 +53,16 @@ await page.screenshot({ path: `${shots}/nia-datos.png` });
 await page.getByRole('button', { name: 'Guardar datos' }).tap();
 await sheetGone();
 const datos = await page.locator('#view-nia .data-list').innerText();
-assert.match(datos, /24 de julio de 2026/);
-assert.match(datos, /3 meses y 5 días/);
+assert.ok(datos.toLowerCase().includes(fmtLongDate(birth, { year: true }).toLowerCase()), 'fecha de nacimiento');
+assert.ok(datos.includes(age), `edad ${age}`);
 assert.match(datos, /A\+/);
 assert.match(datos, /58,5 cm/);
-step('Datos personales: nacimiento, edad calculada (3 meses y 5 días), grupo A+ y talla 58,5 cm (rechaza 200 cm)');
+step(`Datos personales: nacimiento, edad calculada (${age}), grupo A+ y talla 58,5 cm (rechaza 200 cm)`);
 
 const tiles = await page.locator('#view-nia .album-tile').allInnerTexts();
 assert.match(tiles[3], /3 meses[\s\S]*Este mes/);
-assert.match(tiles[0], /Nacimiento[\s\S]*24 jul/);
-assert.match(tiles[12], /1 año[\s\S]*Llega el 24 jul/);
+assert.ok(tiles[0].includes('Nacimiento') && tiles[0].includes(fmtShortDate(birth)));
+assert.ok(tiles[12].includes('1 año') && tiles[12].includes(`Llega el ${fmtShortDate(addMonths(birth, 12))}`));
 step('Álbum: fechas de cada mes, el actual marcado y los futuros con su fecha');
 
 // Foto de cabecera
@@ -65,7 +71,7 @@ await toastSays('Foto guardada');
 await page.locator('#view-nia .photo-frame img').waitFor();
 await page.getByRole('tab', { name: 'Hoy' }).tap();
 await page.locator('#view-hoy .photo-frame img').waitFor();
-assert.match(await page.locator('#view-hoy .date-line').innerText(), /3 meses y 5 días/);
+assert.ok((await page.locator('#view-hoy .date-line').innerText()).includes(age));
 await page.screenshot({ path: `${shots}/foto-hoy.png` });
 step('Foto elegida en Nia aparece también en Hoy, con la edad junto a la fecha');
 
