@@ -330,7 +330,19 @@ function start() {
 
 function registerSW() {
   if ('serviceWorker' in navigator && location.protocol !== 'file:' && !store.cloudExpected) {
-    navigator.serviceWorker.register('./sw.js').catch((err) => console.warn('SW', err));
+    // updateViaCache 'none': comprueba sw.js siempre contra el servidor.
+    navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then((reg) => {
+      // En iPhone la app instalada se "despierta" sin recargar: al volver a ella, buscar versión nueva.
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
+    }).catch((err) => console.warn('SW', err));
+    // Cuando entra una versión nueva, recargar una vez para mostrarla.
+    const hadController = Boolean(navigator.serviceWorker.controller);
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadController || reloaded) return;
+      reloaded = true;
+      if (!document.querySelector('.sheet-root, .dialog-root')) location.reload();
+    });
   }
 }
 

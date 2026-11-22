@@ -9,7 +9,7 @@ import { syncLabel } from './common.js';
 import { THEMES, getTheme, setTheme } from '../theme.js';
 import { pupIcon } from '../characters.js';
 
-export const APP_VERSION = '1.10.0';
+export const APP_VERSION = '1.10.1';
 
 const INTERVALS = [[0, 'Sin referencia'], [120, 'Cada 2 h'], [150, 'Cada 2 h 30'], [180, 'Cada 3 h'], [210, 'Cada 3 h 30'], [240, 'Cada 4 h']];
 
@@ -221,6 +221,9 @@ export function openSettings() {
           <p>Esta versión no sincroniza. Los datos ya usan identificadores únicos y fecha de modificación para poder sincronizarse de forma segura en el futuro, siempre con tu autorización explícita.</p>`}
         </div>
 
+        ${'serviceWorker' in navigator && !cloud ? `<button class="btn btn-ghost btn-block" data-force-update style="margin-top:22px">${icons.download({ size: 18 })} Buscar actualización</button>
+        <p class="subtle" style="margin:8px 4px 0;font-size:.8rem">Descarga la última versión de la app. Tus datos no se tocan.</p>` : ''}
+
         <div class="foot">${logo()}<div>Versión ${APP_VERSION} · Hecho con cariño ${paw(10)}</div>
           <div style="margin-top:4px">Ilustraciones originales: Nube, Canela, Mamá y Papá son personajes propios de Nia CV. Tipografías Cormorant Garamond y DM Sans (SIL OFL).</div></div>`;
       };
@@ -248,6 +251,17 @@ export function openSettings() {
       });
 
       body.addEventListener('click', async (e) => {
+        if (e.target.closest('[data-force-update]')) {
+          toast('Actualizando…');
+          try {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(regs.map((r) => r.unregister()));
+            const keys = await caches.keys();
+            await Promise.all(keys.filter((k) => k.startsWith('nia-cv-')).map((k) => caches.delete(k)));
+          } catch { /* se recarga igualmente */ }
+          location.replace(location.pathname + '?v=' + Date.now() + location.hash);
+          return;
+        }
         const rm = e.target.closest('[data-rm-amount]');
         if (rm) {
           const v = Number(rm.dataset.rmAmount);
