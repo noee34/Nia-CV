@@ -701,3 +701,30 @@ button, .chip, .quick button, .cons-opt, .step, label.btn { touch-action: manipu
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .wa-bubble { background: #2E4A33; color: #E3F3DF; } }
 .dose-alert-icon { display: flex; justify-content: center; margin-bottom: 4px; }
 .dialog .btn-whatsapp { width: 100%; margin-top: 8px; }
+
+/* ---------- Sólidos ---------- */
+.food-tabs { margin: 0 0 14px; }
+.food-tabs button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.solid-row { align-items: start; }
+.solid-main { min-width: 0; display: grid; gap: 4px; }
+.solid-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: .85rem; }
+.amount-dots { display: inline-flex; gap: 3px; }
+.amount-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line-strong); }
+.amount-dots i.on { background: var(--blue-deep); }
+.tol-pill { padding: 3px 10px; font-size: .76rem; }
+.tol-pill svg { width: 13px; height: 13px; }
+.tol-pill.bien { background: var(--sage-wash); color: var(--ink); }
+.tol-pill.regular { background: var(--terra-wash); color: var(--ink); }
+.tol-pill.mal { background: var(--terra-wash); color: var(--danger); }
+.new-pill { padding: 2px 9px; font-size: .7rem; background: var(--blue-wash); color: var(--ink); vertical-align: middle; }
+.food-row { width: 100%; display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; padding: 12px 2px; border-bottom: 1px solid var(--line); text-align: left; min-height: 58px; }
+.list li:last-child .food-row { border-bottom: 0; }
+.food-main { display: grid; gap: 2px; min-width: 0; }
+.food-main .subtle { font-size: .78rem; }
+.amount-scale { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.scale-opt { display: grid; justify-items: center; gap: 6px; padding: 10px 2px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); font-size: .74rem; color: var(--ink-soft); min-height: 62px; touch-action: manipulation; }
+.scale-opt.on { border-color: var(--blue-deep); background: var(--blue-wash); color: var(--ink); font-weight: 500; }
+.tol-face { font-size: 1.6rem; line-height: 1; }
+.tol-opt.mal.on { border-color: var(--danger); }
+.tl-dot.solid { color: var(--sage); }
+.first-time { margin-top: 10px; }

@@ -244,6 +244,18 @@ ninguna serie. Las fuentes son de uso libre (SIL OFL, licencias en `fonts/`).
   cada hora de toma (hora local fija, también tras el cambio de hora) con aviso a la hora.
 - Tablas `medicacion` y `medicacion_tomas` (`supabase/medicacion.sql`), compartidas con la familia.
 
+### Sólidos (pestaña Comidas → Sólidos)
+
+- La pestaña *Biberones* pasa a llamarse **Comidas**, con dos apartados: **Biberones | Sólidos**.
+- Cada comida guarda: alimento, **primera vez** (se marca sola si nunca lo había probado),
+  textura, **cuánto comió** (nada → todo), si le gustó y **cómo le sentó** (bien, regular,
+  mal) con los síntomas que notaste (gases, vómito, ronchas…) y notas.
+- **Alimentos probados**: cuántas veces, desde cuándo y si alguno no le sentó bien (salen
+  primero); filtro *No le sentaron bien*; tocar uno lo registra otra vez.
+- **Hoy** muestra *Sólidos de hoy* y las comidas en la actividad reciente.
+- Si le sentó mal, la app recuerda comentarlo con el pediatra (y el 112 ante señales graves).
+- Tabla `solidos` (`supabase/solidos.sql`), compartida con la familia; incluida en CSV y copia.
+
 ## 7. Privacidad
 Ver [`PRIVACY.md`](PRIVACY.md). En resumen: sin cuentas, sin servidores, sin analíticas;
 los datos sólo salen del iPhone si tú exportas un archivo.

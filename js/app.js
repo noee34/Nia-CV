@@ -21,10 +21,11 @@ import { renderMedicine, openCitaForm, openSpecialistName, addToPhoneCalendar } 
 import { upcoming, dueReminders, citaTitle, reminderLabel } from './medical.js';
 import { openMedForm, giveDose, undoDose, showDoseAlert, addMedsToCalendar, openWhatsAppEditor } from './views/meds-view.js';
 import { dueDoses } from './meds.js';
+import { openSolidForm } from './views/solids-view.js';
 
 const TABS = {
   hoy: { label: 'Hoy', icon: icons.home, render: renderToday },
-  biberones: { label: 'Biberones', icon: icons.bottle, render: renderBottles },
+  biberones: { label: 'Comidas', icon: icons.bottle, render: renderBottles },
   cacas: { label: 'Cacas', icon: icons.diaper, render: renderPoops },
   diario: { label: 'Diario', icon: icons.calendar, render: renderDiary },
   medicina: { label: 'Medicina', icon: icons.medical, render: renderMedicine },
@@ -45,6 +46,8 @@ const state = {
   diaryWeek: weekStart(today0),
   diaryMonth: ym(today0),
   diarySelected: today0,
+  foodTab: 'biberones',
+  foodsFilter: 'todos',
   medTab: 'citas',
   medSection: 'medico',
   medFilter: 'all',
@@ -96,7 +99,7 @@ function openBottleCalendar() {
       const draw = () => {
         body.innerHTML = `<div class="sheet-head"><h2 class="h-section">Elegir día</h2>
           <button class="icon-btn" data-close aria-label="Cerrar">${icons.close()}</button></div>
-          ${bottleCalendarHTML(y, m, state.bottlesDay)}
+          ${bottleCalendarHTML(y, m, state.bottlesDay, state.foodTab === 'solidos')}
           <button class="btn btn-ghost btn-block" data-pick-today style="margin-top:14px">Volver a hoy</button>`;
       };
       draw();
@@ -118,6 +121,7 @@ function openBottleCalendar() {
 function editRecord(type, id) {
   const rec = store.get(type, id);
   if (!rec) return;
+  if (type === 'solids') return openSolidForm({ record: rec });
   (type === 'bottles' ? openBottleForm : openPoopForm)({ record: rec });
 }
 
@@ -140,6 +144,7 @@ document.addEventListener('click', (e) => {
       'settings': openSettings,
       'add-bottle': () => openBottleForm({ forDay: state.tab === 'biberones' ? state.bottlesDay : null }),
       'add-poop': () => openPoopForm(),
+      'add-solid': () => openSolidForm({ forDay: state.tab === 'biberones' ? state.bottlesDay : null }),
       'add-poop-day': () => openPoopForm({ forDay: state.poopsSelected }),
       'bottle-calendar': openBottleCalendar,
       'poops-more': () => { state.poopLimit += 40; render(); },
@@ -164,6 +169,14 @@ document.addEventListener('click', (e) => {
   if (undo) return undoDose(undo.dataset.undoDose);
   const med = t.closest('[data-med]');
   if (med) { const rec = store.get('meds', med.dataset.med); if (rec) openMedForm({ record: rec }); return; }
+  const ftab = t.closest('[data-food-tab]');
+  if (ftab) { state.foodTab = ftab.dataset.foodTab; render(); return; }
+  const ff = t.closest('[data-foods-filter]');
+  if (ff) { state.foodsFilter = ff.dataset.foodsFilter; render(); return; }
+  const solid = t.closest('[data-solid]');
+  if (solid) { const rec = store.get('solids', solid.dataset.solid); if (rec) openSolidForm({ record: rec }); return; }
+  const food = t.closest('[data-food]');
+  if (food) return openSolidForm({ food: food.dataset.food, forDay: state.bottlesDay });
   const mtab = t.closest('[data-med-tab]');
   if (mtab) { state.medTab = mtab.dataset.medTab; render(); return; }
 

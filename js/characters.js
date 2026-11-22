@@ -227,6 +227,21 @@ export const medicalScene = () => scene('0 0 340 160', 'Ilustración: Nube con u
   ${doctorBag(262, 132, 1.1)}
   ${heart(84, 50, 1.1)}${star(250, 60, 0.8)}${star(70, 96, 0.6, '#B7C2AE')}`);
 
+/** SÓLIDOS: Canela con su cuenco y su cuchara; Nube con babero. */
+const bowl = (x, y, s = 1) =>
+  `<g transform="translate(${x} ${y}) scale(${s})"><path d="M-22-4h44c0 14-10 22-22 22S-22 10-22-4Z" fill="#B8D7E8"/><ellipse cy="-4" rx="22" ry="6" fill="#8EAFC0"/><ellipse cy="-5" rx="18" ry="4" fill="#F4C99A"/><path d="M-12-6q4-3 8 0M2-6q4-3 8 0" stroke="#E9A86A" stroke-width="1.4" fill="none" stroke-linecap="round"/></g>`;
+const spoon = (x, y, s = 1, rot = 0) =>
+  `<g transform="translate(${x} ${y}) scale(${s}) rotate(${rot})"><ellipse rx="5.5" ry="7.5" fill="#E7EEF2" stroke="#8EAFC0" stroke-width="1.4"/><rect x="-1.6" y="6" width="3.2" height="22" rx="1.6" fill="#E7EEF2" stroke="#8EAFC0" stroke-width="1.2"/></g>`;
+const bib = `<path d="M44 98q16 12 32 0l3 16q-19 16-38 0Z" fill="#FFFDF9" stroke="#D7A18C" stroke-width="1.4"/><circle cx="60" cy="110" r="3.2" fill="#EDCDBF"/>`;
+export const solidsScene = () => scene('0 0 340 160', 'Ilustración: Canela con su cuenco de puré y Nube con babero', `
+  ${sun(292, 32, 14)}${cloud(30, 14, 0.6)}
+  ${hills(340, 160, 0.74)}
+  ${flower(36, 138, 1)}${flower(304, 134, 1, '#B8D7E8')}
+  ${place(pupSVG(F.nube, { eyes: 'open', mouth: 'open' }) + bib, 70, 34, 0.7)}
+  ${place(pupSVG(F.canela, { eyes: 'closed', mouth: 'open', hold: bowl(60, 122, 0.9) }), 172, 32, 0.72, true)}
+  ${spoon(246, 70, 1, 25)}
+  ${heart(150, 52, 1.1)}${star(262, 108, 0.7, '#B7C2AE')}`);
+
 /** Estados vacíos: Nube duerme sobre su cojín. */
 export const sleepingScene = (size = 140) => `<svg width="${size}" height="${Math.round(size * 0.66)}" viewBox="0 0 210 138" aria-hidden="true">
   <path d="M178 14a20 20 0 1 0 16 30 16 16 0 1 1-16-30Z" fill="#E8DED1"/>

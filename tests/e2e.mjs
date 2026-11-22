@@ -165,7 +165,7 @@ await shot('05-hoy');
 step('Historial de prueba sembrado');
 
 // --- Biberones ---
-await page.getByRole('tab', { name: 'Biberones' }).tap();
+await page.getByRole('tab', { name: 'Comidas', exact: true }).tap();
 await page.locator('#view-biberones .daynav').waitFor();
 assert.match(await text('.daynav-title'), /Hoy/);
 assert.equal(await page.locator('[data-day-step="1"]').isDisabled(), true);

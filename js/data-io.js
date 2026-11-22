@@ -1,6 +1,7 @@
 // Exportación CSV, copia de seguridad JSON e importación sin duplicados.
 import { dayKey, toTimeInput } from './dates.js';
 import { CONSISTENCIES, byTimeAsc } from './stats.js';
+import { AMOUNTS, TOLERANCE, TEXTURES } from './solids.js';
 
 export const BACKUP_FORMAT = 'nia-cv-backup';
 export const BACKUP_VERSION = 1;
@@ -16,11 +17,12 @@ const iso = (ms) => (ms ? new Date(ms).toISOString() : '');
  * Un único CSV con biberones y deposiciones, ordenado por fecha.
  * Separador ';' y BOM para que Numbers y Excel en español lo abran bien.
  */
-export function toCSV(bottles, poops) {
+export function toCSV(bottles, poops, solids = []) {
   const header = ['tipo', 'fecha', 'hora', 'preparado_ml', 'tomado_ml', 'consistencia', 'observaciones', 'creado', 'modificado', 'id'];
   const rows = [
     ...bottles.map((r) => ({ ...r, _t: 'biberon' })),
     ...poops.map((r) => ({ ...r, _t: 'deposicion' })),
+    ...solids.map((r) => ({ ...r, _t: 'solido' })),
   ].sort(byTimeAsc).map((r) => [
     r._t,
     dayKey(r.at),
@@ -28,7 +30,7 @@ export function toCSV(bottles, poops) {
     r._t === 'biberon' ? r.prepared : '',
     r._t === 'biberon' ? r.taken : '',
     r._t === 'deposicion' ? (CONSISTENCIES[r.consistency]?.label ?? r.consistency) : '',
-    r.notes || '',
+    r._t === 'solido' ? solidText(r) : (r.notes || ''),
     iso(r.createdAt),
     iso(r.updatedAt),
     r.id,
@@ -36,7 +38,19 @@ export function toCSV(bottles, poops) {
   return '﻿' + [header.join(';'), ...rows].join('\r\n');
 }
 
-export function toBackup({ bottles, poops, album = [], citas = [], meds = [], medlog = [], settings }) {
+/** Comida sólida en una celda: alimento, cuánto comió, cómo le sentó, síntomas y notas. */
+function solidText(r) {
+  return [
+    `${r.food}${r.firstTime ? ' (primera vez)' : ''}`,
+    r.texture ? TEXTURES[r.texture] : '',
+    `Comió: ${AMOUNTS[r.amount]?.label || r.amount}`,
+    TOLERANCE[r.tolerance]?.label || r.tolerance,
+    (r.symptoms || []).join(', '),
+    r.notes || '',
+  ].filter(Boolean).join(' · ');
+}
+
+export function toBackup({ bottles, poops, album = [], citas = [], meds = [], medlog = [], solids = [], settings }) {
   return {
     format: BACKUP_FORMAT,
     version: BACKUP_VERSION,
@@ -48,6 +62,7 @@ export function toBackup({ bottles, poops, album = [], citas = [], meds = [], me
     citas,
     meds,
     medlog,
+    solids,
   };
 }
 
@@ -61,7 +76,7 @@ export function parseBackup(text) {
   const okPoop = (r) => r && typeof r.id === 'string' && Number.isFinite(r.at) && CONSISTENCIES[r.consistency];
   const okAlbum = (r) => r && typeof r.id === 'string' && Number.isInteger(r.month) && r.month >= 0 && r.month <= 12;
   const okCita = (r) => r && typeof r.id === 'string' && Number.isFinite(r.at) && typeof r.kind === 'string';
-  return { ...data, bottles: data.bottles.filter(okBottle), poops: data.poops.filter(okPoop), album: (data.album || []).filter(okAlbum), citas: (data.citas || []).filter(okCita), meds: (data.meds || []).filter((r) => r && typeof r.id === 'string' && Array.isArray(r.times)), medlog: (data.medlog || []).filter((r) => r && typeof r.id === 'string' && typeof r.dose === 'string') };
+  return { ...data, bottles: data.bottles.filter(okBottle), poops: data.poops.filter(okPoop), album: (data.album || []).filter(okAlbum), citas: (data.citas || []).filter(okCita), meds: (data.meds || []).filter((r) => r && typeof r.id === 'string' && Array.isArray(r.times)), medlog: (data.medlog || []).filter((r) => r && typeof r.id === 'string' && typeof r.dose === 'string'), solids: (data.solids || []).filter((r) => r && typeof r.id === 'string' && Number.isFinite(r.at) && typeof r.food === 'string') };
 }
 
 /** Fusiona por id; si existe en ambos lados gana el `updatedAt` más reciente. */

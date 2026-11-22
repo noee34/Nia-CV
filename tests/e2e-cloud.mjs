@@ -13,7 +13,7 @@ await mkdir(shots, { recursive: true });
 
 /* ---------- Servidor simulado (auth + tablas con "RLS") ---------- */
 const users = new Map(); // email -> { id, password }
-const tables = { biberones: [], deposiciones: [], ajustes: [], album: [], citas: [], medicacion: [], medicacion_tomas: [] };
+const tables = { biberones: [], deposiciones: [], ajustes: [], album: [], citas: [], medicacion: [], medicacion_tomas: [], solidos: [] };
 const pages = new Set();
 const members = new Map(); // miembro -> propietario (solo miembros activos; salir/quitar = inactivo)
 const invites = new Map(); // código -> { owner, expires, usedBy }
@@ -340,6 +340,17 @@ assert.equal(tables.medicacion[0].nombre, 'Vitamina D');
 assert.equal(tables.medicacion[0].usuario_id, 'u-1');
 assert.equal(tables.medicacion_tomas[0].dada_por, 'familia');
 step('La medicación y las tomas dadas se sincronizan con la pareja');
+
+// Sólidos: lo que apunta la pareja llega a la propietaria
+await pc.evaluate(async () => {
+  const { store } = await import('/js/store.js');
+  await store.save('solids', { at: Date.now(), food: 'Plátano', firstTime: true, texture: 'chafado', amount: 'mitad', liked: 'gusto', tolerance: 'regular', symptoms: ['Gases'], notes: '' });
+});
+await pa.waitForFunction(async () => (await import('/js/store.js')).store.all('solids').some((x) => x.food === 'Plátano' && x.symptoms[0] === 'Gases'), null, { timeout: 8000 });
+assert.equal(tables.solidos[0].alimento, 'Plátano');
+assert.equal(tables.solidos[0].usuario_id, 'u-1');
+assert.equal(tables.solidos[0].tolerancia, 'regular');
+step('Las comidas sólidas se sincronizan entre la pareja y la propietaria');
 
 await pa.getByRole('button', { name: 'Ajustes' }).tap();
 await waitText(pa, '.sheet', /pareja@example\.com/);

@@ -28,7 +28,7 @@ await page.locator('.h-display').waitFor();
 assert.equal(await page.locator('#view-hoy .scene-banner svg.scene').count(), 1);
 assert.equal(await page.locator('#view-hoy .card-badge.pup svg').count(), 2);
 step('Hoy: escena del jardín y caniches de cuerpo entero en las tarjetas');
-for (const [tab, view] of [['Biberones', 'biberones'], ['Cacas', 'cacas'], ['Diario', 'diario']]) {
+for (const [tab, view] of [['Comidas', 'biberones'], ['Cacas', 'cacas'], ['Diario', 'diario']]) {
   await page.getByRole('tab', { name: tab }).tap();
   await page.locator(`#view-${view} .scene-banner svg.scene`).waitFor({ timeout: 5000 });
 }

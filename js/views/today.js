@@ -4,6 +4,8 @@ import { icons, logo, paw, consistencyIcon, smallStar } from '../art.js';
 import { gardenScene, pupIcon, photoFrame } from '../characters.js';
 import { nextCitaCard } from './medicine.js';
 import { todayMedsCard } from './meds-view.js';
+import { solidsTodayCard } from './solids-view.js';
+import { TOLERANCE, AMOUNTS } from '../solids.js';
 import { esc } from '../ui.js';
 import { dayKey, fmtLongDate, fmtTime, ageText } from '../dates.js';
 import { onDay, bottleSummary, poopSummary, nextReference, CONSISTENCIES, byTimeAsc } from '../stats.js';
@@ -24,6 +26,7 @@ export function renderToday() {
   const events = [
     ...bottles.map((b) => ({ ...b, kind: 'bottles' })),
     ...poops.map((p) => ({ ...p, kind: 'poops' })),
+    ...onDay(store.all('solids'), key).map((x) => ({ ...x, kind: 'solids' })),
   ].sort(byTimeAsc);
 
   return `
@@ -64,6 +67,8 @@ export function renderToday() {
     <button class="btn btn-blue btn-block" data-action="add-bottle">${icons.plus({ size: 18 })} Añadir biberón</button>
   </article>
 
+  ${solidsTodayCard()}
+
   <article class="card" aria-labelledby="card-p">
     <div class="card-head">
       <span class="eyebrow" id="card-p">Pañales y cacas</span>
@@ -94,6 +99,14 @@ export function renderToday() {
 }
 
 function timelineItem(e) {
+  if (e.kind === 'solids') {
+    return `<li class="tl-item"><button class="tl-btn" data-edit="solids" data-id="${e.id}" aria-label="${fmtTime(e.at)}, ${esc(e.food)}, ${TOLERANCE[e.tolerance]?.label}. Editar">
+    <span class="tl-dot solid">${icons.spoon({ size: 20 })}</span>
+    <span class="tl-main"><span class="tl-title" style="display:block">${esc(e.food)}${e.firstTime ? ' <span class="pill new-pill">Primera vez</span>' : ''}</span>
+      <span class="tl-meta" style="display:block">Comió: ${AMOUNTS[e.amount]?.label.toLowerCase()} · ${TOLERANCE[e.tolerance]?.label.toLowerCase()}${e.symptoms?.length ? ` (${esc(e.symptoms.join(', ').toLowerCase())})` : ''}</span></span>
+    <span class="tl-time">${fmtTime(e.at)}</span>
+  </button></li>`;
+  }
   const isB = e.kind === 'bottles';
   const title = isB ? `Biberón · <span class="tnum">${ml(e.taken)}</span>` : `Caca · ${CONSISTENCIES[e.consistency].label}`;
   const meta = isB ? `de ${ml(e.prepared)} preparados${e.notes ? ` · ${esc(e.notes)}` : ''}` : esc(e.notes || '');

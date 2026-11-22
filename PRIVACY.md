@@ -11,6 +11,7 @@ para que tus datos sean sólo tuyos.
   deposiciones y observaciones opcionales.
 - Tus preferencias (cantidades rápidas, referencia de próximo biberón).
 - Si los indicas, datos personales del bebé: fecha de nacimiento, grupo sanguíneo y talla.
+- Si las apuntas, comidas sólidas (alimento, cantidad, si le gustó, cómo le sentó y síntomas).
 - Si las apuntas, citas médicas del bebé (tipo, fecha, profesional, lugar, notas y avisos).
 - Si la apuntas, su medicación o vitaminas (nombre, dosis, horas, fechas) y qué tomas se
   marcaron como dadas y por quién; y, si lo indicas, el texto y el teléfono para WhatsApp.

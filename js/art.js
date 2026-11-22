@@ -39,6 +39,8 @@ export const icons = {
   stetho: (o) => svg('<path d="M6 3v5a4 4 0 0 0 8 0V3"/><path d="M10 12v2.5a4.5 4.5 0 0 0 9 0V13"/><circle cx="19" cy="11" r="2"/>', o),
   pill: (o) => svg('<rect x="3.2" y="8.5" width="17.6" height="7" rx="3.5" transform="rotate(-35 12 12)"/><path d="m9.2 8.2 5.6 7.6"/>', o),
   clipboard: (o) => svg('<rect x="5" y="4.5" width="14" height="16.5" rx="2.5"/><path d="M9 4.5V3.5h6v1M8.5 10h7M8.5 13.5h7M8.5 17h4"/>', o),
+  spoon: (o) => svg('<ellipse cx="12" cy="7" rx="4" ry="5"/><path d="M12 12v9"/>', o),
+  bowl: (o) => svg('<path d="M3.5 11h17a8.5 8.5 0 0 1-17 0Z"/><path d="M8 11c0-2 1.8-3.5 4-3.5s4 1.5 4 3.5M14.5 7.5 18 3"/>', o),
   chart: (o) => svg('<path d="M4 20h16"/><rect x="5.5" y="11" width="3" height="6" rx="1"/><rect x="10.5" y="6" width="3" height="11" rx="1"/><rect x="15.5" y="9" width="3" height="8" rx="1"/>', o),
 };
 

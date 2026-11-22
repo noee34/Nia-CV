@@ -1,7 +1,8 @@
 // Pantalla BIBERONES: vista diaria navegable + resumen del día.
 import { store } from '../store.js';
 import { icons } from '../art.js';
-import { bottleScene } from '../characters.js';
+import { bottleScene, solidsScene } from '../characters.js';
+import { renderSolidsSection } from './solids-view.js';
 import { dayKey, fmtLongDate, relativeDayLabel, parseDayKey } from '../dates.js';
 import { onDay, bottleSummary, groupByDay } from '../stats.js';
 import { calendarHTML } from '../ui.js';
@@ -14,13 +15,20 @@ export function renderBottles(state) {
   const s = bottleSummary(list);
   const isToday = key === today;
 
+  const solids = state.foodTab === 'solidos';
+
   return `
   <header class="topbar">
-    <h1 class="h-section" style="font-size:2rem">Biberones</h1>
+    <h1 class="h-section" style="font-size:2rem">Comidas</h1>
     <button class="icon-btn" data-action="bottle-calendar" aria-label="Elegir día en el calendario">${icons.calendar()}</button>
   </header>
 
-  <div class="scene-banner small">${bottleScene()}</div>
+  <div class="segmented food-tabs" role="tablist" aria-label="Tipo de comida">
+    <button role="tab" data-food-tab="biberones" aria-selected="${!solids}" class="${!solids ? 'on' : ''}">${icons.bottle({ size: 17 })} Biberones</button>
+    <button role="tab" data-food-tab="solidos" aria-selected="${solids}" class="${solids ? 'on' : ''}">${icons.spoon({ size: 17 })} Sólidos</button>
+  </div>
+
+  <div class="scene-banner small">${solids ? solidsScene() : bottleScene()}</div>
 
   <nav class="daynav" aria-label="Cambiar de día">
     <button class="icon-btn" data-day-step="-1" aria-label="Día anterior">${icons.left()}</button>
@@ -31,7 +39,7 @@ export function renderBottles(state) {
     <button class="icon-btn" data-day-step="1" aria-label="Día siguiente" ${isToday || key > today ? 'disabled' : ''}>${icons.right()}</button>
   </nav>
 
-  <div class="swipe-zone">
+  ${solids ? renderSolidsSection(state) : `<div class="swipe-zone">
     ${list.length
       ? `<div class="card" style="padding:4px 18px"><ul class="list">${list.map(bottleRow).join('')}</ul></div>`
       : `<div class="card">${emptyState(isToday ? 'Todavía no hay biberones registrados hoy' : 'Sin biberones registrados este día', 'Pulsa “Registrar biberón” para añadir una toma.')}</div>`}
@@ -51,15 +59,15 @@ export function renderBottles(state) {
 
   <div class="dock"><div class="dock-inner">
     <button class="btn btn-primary" data-action="add-bottle">${icons.plus({ size: 18 })} Registrar biberón</button>
-  </div></div>`;
+  </div></div>`}`;
 }
 
 /** Contenido de la hoja de calendario para elegir día de biberones. */
-export function bottleCalendarHTML(year, month, selected) {
+export function bottleCalendarHTML(year, month, selected, solids = false) {
   const marks = new Map();
-  for (const [k, v] of groupByDay(store.all('bottles'))) marks.set(k, { bottles: v.length, poops: 0 });
+  for (const [k, v] of groupByDay(store.all(solids ? 'solids' : 'bottles'))) marks.set(k, { bottles: v.length, poops: 0 });
   return calendarHTML({
     year, month, selected, marks, mode: 'activity', id: 'bcal',
-    legend: '<div class="cal-legend"><span><i class="dot b"></i>Días con biberones</span></div>',
+    legend: `<div class="cal-legend"><span><i class="dot b"></i>Días con ${solids ? 'comidas sólidas' : 'biberones'}</span></div>`,
   });
 }

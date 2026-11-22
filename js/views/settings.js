@@ -9,7 +9,7 @@ import { syncLabel } from './common.js';
 import { THEMES, getTheme, setTheme } from '../theme.js';
 import { pupIcon } from '../characters.js';
 
-export const APP_VERSION = '1.9.0';
+export const APP_VERSION = '1.10.0';
 
 const INTERVALS = [[0, 'Sin referencia'], [120, 'Cada 2 h'], [150, 'Cada 2 h 30'], [180, 'Cada 3 h'], [210, 'Cada 3 h 30'], [240, 'Cada 4 h']];
 
@@ -266,10 +266,10 @@ export function openSettings() {
         if (ex) {
           const stamp = dayKey();
           if (ex.dataset.export === 'csv') {
-            const ok = await deliverFile(`nia-cv-registros-${stamp}.csv`, toCSV(store.all('bottles'), store.all('poops')), 'text/csv;charset=utf-8');
+            const ok = await deliverFile(`nia-cv-registros-${stamp}.csv`, toCSV(store.all('bottles'), store.all('poops'), store.all('solids')), 'text/csv;charset=utf-8');
             if (ok) toast('CSV preparado');
           } else {
-            const data = toBackup({ bottles: store.all('bottles'), poops: store.all('poops'), album: store.all('album'), citas: store.all('citas'), meds: store.all('meds'), medlog: store.all('medlog'), settings: store.settings });
+            const data = toBackup({ bottles: store.all('bottles'), poops: store.all('poops'), album: store.all('album'), citas: store.all('citas'), meds: store.all('meds'), medlog: store.all('medlog'), solids: store.all('solids'), settings: store.settings });
             const ok = await deliverFile(`nia-cv-copia-${stamp}.json`, JSON.stringify(data, null, 2), 'application/json');
             if (ok) toast('Copia de seguridad creada');
           }
@@ -308,7 +308,7 @@ export function openSettings() {
         if (e.target.closest('[data-wipe]')) {
           const ok = await confirmDialog({
             title: '¿Borrar todos los registros?',
-            message: (store.backend === 'supabase' ? 'Se eliminarán todos los biberones y deposiciones de tu cuenta, en todos los dispositivos.' : 'Se eliminarán todos los biberones y deposiciones de este dispositivo.') + ' El álbum, las citas, la medicación y los datos de Nia no se borran. Esta acción no se puede deshacer. Te recomendamos crear antes una copia de seguridad.',
+            message: (store.backend === 'supabase' ? 'Se eliminarán todos los biberones y deposiciones de tu cuenta, en todos los dispositivos.' : 'Se eliminarán todos los biberones y deposiciones de este dispositivo.') + ' El álbum, las comidas sólidas, las citas, la medicación y los datos de Nia no se borran. Esta acción no se puede deshacer. Te recomendamos crear antes una copia de seguridad.',
             confirmLabel: 'Borrar todo',
           });
           if (!ok) return;
